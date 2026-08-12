@@ -8,17 +8,17 @@ Berdasarkan `TaskList_SaaS_Undangan_Digital.xlsx`. Status: `[x]` (Selesai), `[/]
 - [x] **AUTH-01 & AUTH-02**: Registrasi & Login vendor (NextAuth)
 - [x] **DASH-01**: Pembuatan Vendor Dashboard Dasar (Layout, Routing, Ringkasan)
 - [x] **DASH-04**: Pengaturan Profil Vendor (Nama bisnis, nomor WA)
-- [ ] **INF-04**: Setup Cloudflare R2 Storage (CDN, Signed URL, Bucket config)
+- [x] **INF-04**: Setup Cloudflare R2 Storage (CDN, Signed URL, Bucket config)
 - [ ] **AUTH-03 & AUTH-04**: Verifikasi Email & Lupa Password
-- [ ] **AUTH-05**: Onboarding Wizard Vendor Baru
+- [x] **AUTH-05**: Onboarding Wizard Vendor Baru
 
 ## Phase 2: Client Form & Template Engine (MVP)
 - [x] **ORD-01 & ORD-07**: Buat order baru & Smart link generator (Endpoint API & Token)
 - [x] **FORM-02 s/d FORM-05**: Pengembangan Multi-step Klien Form Page (Step 1-5 + Uploads)
 - [x] **TPL-01 & TPL-02**: Pembuatan JSON-driven Template Engine
 - [x] **TPL-03 s/d TPL-11**: Implementasi Desain Template Dasar & Komponennya
-- [ ] **FORM-11**: Auto-save per step Klien Form (localStorage + backend)
-- [ ] **FORM-12**: Preview live sebelum submit di Klien Form
+- [x] **FORM-11**: Auto-save per step Klien Form (localStorage + backend)
+- [x] **FORM-12**: Preview live sebelum submit di Klien Form
 - [ ] **ORD-04**: Vendor bisa edit minor data undangan setelah klien submit
 
 ## Phase 3: Guest Management, RSVP & Payment (MVP)

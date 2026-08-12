@@ -61,7 +61,9 @@ export default async function ClientFormPage({ params }: { params: Promise<{ tok
 
       <ClientFormWizard 
         clientToken={token} 
-        initialData={order.dataJson} 
+        initialData={order.dataJson}
+        templateName={order.template.name}
+        templateConfig={order.template.configJson}
       />
     </div>
   );

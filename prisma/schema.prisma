@@ -49,6 +49,9 @@ model Vendor {
   planExpiresAt DateTime?
   quotaUsed     Int       @default(0)
   customDomain  String?
+  subdomain     String?   @unique
+  logoUrl       String?
+  isOnboarded   Boolean   @default(false)
   whiteLabel    Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

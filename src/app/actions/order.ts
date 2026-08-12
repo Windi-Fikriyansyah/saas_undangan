@@ -66,7 +66,7 @@ export async function createOrder({
 export async function validateClientToken(token: string) {
   const order = await prisma.order.findUnique({
     where: { clientToken: token },
-    include: { vendor: true }
+    include: { vendor: true, template: true }
   });
 
   if (!order) {
