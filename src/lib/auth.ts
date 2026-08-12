@@ -67,8 +67,9 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, user }: any) {
       if (session.user && user) {
-        // Inject vendor ID to session
+        // Inject vendor ID and role to session
         (session.user as any).id = user.id;
+        (session.user as any).isAdmin = user.isAdmin;
       }
       return session;
     },

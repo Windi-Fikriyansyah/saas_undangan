@@ -6,7 +6,7 @@ import { RsvpStatus } from "@/generated/prisma/client";
 
 import WaGeneratorWrapper from "@/components/dashboard/WaGeneratorWrapper";
 
-export default async function GuestsPage({ searchParams }: { searchParams: { orderId?: string } }) {
+export default async function GuestsPage({ searchParams }: { searchParams: { orderId?: string; search?: string } }) {
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
@@ -29,7 +29,8 @@ export default async function GuestsPage({ searchParams }: { searchParams: { ord
       order: {
         vendorId: vendorId, // security check
       },
-      ...(filterOrderId ? { orderId: filterOrderId } : {})
+      ...(filterOrderId ? { orderId: filterOrderId } : {}),
+      ...(searchParams.search ? { name: { contains: searchParams.search, mode: "insensitive" } } : {})
     },
     include: {
       order: { select: { clientName: true } }
@@ -94,7 +95,14 @@ export default async function GuestsPage({ searchParams }: { searchParams: { ord
             Daftar Tamu
           </h4>
           
-          <form method="get" className="flex items-center gap-2">
+          <form method="get" className="flex flex-col sm:flex-row items-center gap-2">
+            <input
+              type="text"
+              name="search"
+              placeholder="Cari nama tamu..."
+              defaultValue={searchParams.search || ""}
+              className="rounded border border-stroke bg-transparent px-4 py-2 outline-none transition focus:border-brand-500 active:border-brand-500 dark:border-form-strokedark dark:bg-form-input"
+            />
             <select
               name="orderId"
               defaultValue={filterOrderId || ""}

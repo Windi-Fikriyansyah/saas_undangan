@@ -8,11 +8,16 @@ export async function recordInvitationOpen(orderId: string, guestName: string) {
   try {
     const slug = generateSlug(guestName);
 
-    // Find existing guest by orderId and name (or slug)
+    // Find existing guest by orderId and name or slug
     const existingGuest = await prisma.guest.findFirst({
       where: {
         orderId,
-        name: guestName,
+        OR: [
+          { name: { equals: guestName, mode: "insensitive" } },
+          { slug: guestName },
+          { slug: slug },
+          { slug: { startsWith: guestName + "-" } }
+        ]
       },
     });
 
@@ -56,7 +61,12 @@ export async function submitRsvp(
     const existingGuest = await prisma.guest.findFirst({
       where: {
         orderId,
-        name: data.name,
+        OR: [
+          { name: { equals: data.name, mode: "insensitive" } },
+          { slug: data.name },
+          { slug: slug },
+          { slug: { startsWith: data.name + "-" } }
+        ]
       },
     });
 
@@ -105,10 +115,21 @@ export async function generateWaLink(orderId: string, guestName: string, waNumbe
     }
 
     let existingGuest = await prisma.guest.findFirst({
-      where: { orderId, name: guestName }
+      where: { 
+        orderId, 
+        OR: [
+          { name: { equals: guestName, mode: "insensitive" } },
+          { slug: guestName },
+          { slug: slug },
+          { slug: { startsWith: guestName + "-" } }
+        ]
+      }
     });
 
+    let finalSlug = slug;
+    
     if (existingGuest) {
+      finalSlug = existingGuest.slug;
       await prisma.guest.update({
         where: { id: existingGuest.id },
         data: {
@@ -122,7 +143,7 @@ export async function generateWaLink(orderId: string, guestName: string, waNumbe
         data: {
           orderId,
           name: guestName,
-          slug,
+          slug: finalSlug,
           waNumber: waNumber || null,
           waStatus: "SENT",
           waSentAt: new Date(),
@@ -132,7 +153,7 @@ export async function generateWaLink(orderId: string, guestName: string, waNumbe
     }
 
     const domain = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const inviteLink = `${domain}/${order.slug}?to=${slug}`;
+    const inviteLink = `${domain}/${order.slug}?to=${finalSlug}`;
     
     // Replace placeholders in the message template
     const parsedMessage = messageTemplate

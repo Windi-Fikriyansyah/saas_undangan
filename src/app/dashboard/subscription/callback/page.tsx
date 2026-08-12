@@ -86,13 +86,30 @@ export default async function SubscriptionCallbackPage({ searchParams }: { searc
 
   // If successful, update the database
   if (paymentSuccess) {
-    await prisma.vendor.update({
-      where: { id: vendorId },
-      data: {
-        planType: requestedPlan,
-        planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // +30 days
-      }
-    });
+    await prisma.$transaction([
+      prisma.vendor.update({
+        where: { id: vendorId },
+        data: {
+          planType: requestedPlan,
+          planExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // +30 days
+        }
+      }),
+      prisma.payment.update({
+        where: { orderId: order_id },
+        data: { status: "SUCCESS" }
+      })
+    ]);
+  } else {
+    // If we have an order_id but it failed, mark as FAILED 
+    // (Only if it exists in DB to prevent errors)
+    try {
+      await prisma.payment.update({
+        where: { orderId: order_id },
+        data: { status: "FAILED" }
+      });
+    } catch(e) {
+      // ignore if payment not found
+    }
   }
 
   return (

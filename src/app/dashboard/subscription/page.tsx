@@ -3,7 +3,8 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PlanType } from "@/generated/prisma/client";
-import { CheckCircleIcon } from "@/icons";
+import { PLAN_LIMITS } from "@/lib/constants/billing";
+import { createPaymentRequest } from "@/app/actions/payment";
 
 const PLANS = [
   {
@@ -57,15 +58,12 @@ export default async function SubscriptionPage() {
     redirect("/api/auth/signin");
   }
 
-  // Generate checkout URL helper
-  const getPakasirCheckoutUrl = (planType: string, amount: number) => {
-    const slug = process.env.PAKASIR_PROJECT_SLUG || "demo";
-    // We create a unique order ID that contains vendorId, planType, and timestamp
-    const orderId = `SUB-${vendorId}-${planType}-${Date.now()}`;
-    const redirectUrl = encodeURIComponent(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/dashboard/subscription/callback`);
-    
-    return `https://app.pakasir.com/pay/${slug}/${amount}?order_id=${orderId}&redirect=${redirectUrl}`;
-  };
+  const orderCount = await prisma.order.count({ where: { vendorId } });
+  const currentLimit = PLAN_LIMITS[vendor.planType].maxOrders;
+  const payments = await prisma.payment.findMany({
+    where: { vendorId },
+    orderBy: { createdAt: 'desc' }
+  });
 
   return (
     <div className="mx-auto max-w-screen-xl p-4 md:p-6 2xl:p-10">
@@ -79,12 +77,26 @@ export default async function SubscriptionPage() {
         <h3 className="text-xl font-semibold text-black dark:text-white mb-2">
           Status Saat Ini: <span className="text-brand-500 uppercase">{vendor.planType.replace("_", " ")}</span>
         </h3>
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+        <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
           Tingkatkan paket Anda untuk mendapatkan akses tak terbatas ke semua fitur eksklusif SaaS Undangan Digital.
         </p>
+        
+        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg flex items-center justify-between border border-gray-100 dark:border-gray-700">
+          <div>
+            <p className="text-sm font-medium text-black dark:text-white mb-1">Kuota Undangan Aktif</p>
+            <p className="text-xs text-gray-500">Jumlah undangan yang sedang berjalan</p>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-bold text-brand-600 dark:text-brand-400">{orderCount}</span>
+            <span className="text-sm text-gray-500 mx-1">/</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {currentLimit > 1000 ? "Tak Terbatas" : currentLimit}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 mb-12">
         {PLANS.map((plan) => (
           <div key={plan.type} className={`flex flex-col rounded-xl border ${vendor.planType === plan.type ? "border-brand-500 shadow-brand-200 shadow-lg" : "border-stroke"} bg-white p-8 shadow-default dark:border-strokedark dark:bg-boxdark`}>
             
@@ -112,18 +124,78 @@ export default async function SubscriptionPage() {
               ))}
             </ul>
 
-            <a
-              href={vendor.planType === plan.type ? "#" : getPakasirCheckoutUrl(plan.type, plan.price)}
-              className={`w-full rounded-lg px-4 py-3 text-center font-medium transition ${
-                vendor.planType === plan.type
-                  ? "cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
-                  : "bg-brand-500 text-white hover:bg-brand-600"
-              }`}
-            >
-              {vendor.planType === plan.type ? "Paket Aktif" : "Pilih Paket"}
-            </a>
+            {vendor.planType === plan.type ? (
+              <button disabled className="w-full rounded-lg px-4 py-3 text-center font-medium transition cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                Paket Aktif
+              </button>
+            ) : (
+              <form action={async () => {
+                "use server";
+                const url = await createPaymentRequest(plan.type, plan.price);
+                redirect(url);
+              }}>
+                <button type="submit" className="w-full rounded-lg px-4 py-3 text-center font-medium transition bg-brand-500 text-white hover:bg-brand-600">
+                  Pilih Paket
+                </button>
+              </form>
+            )}
           </div>
         ))}
+      </div>
+
+      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+        <div className="border-b border-stroke px-6 py-4 dark:border-strokedark">
+          <h3 className="font-semibold text-black dark:text-white">
+            Riwayat Pembayaran
+          </h3>
+        </div>
+        <div className="p-6">
+          {payments.length === 0 ? (
+            <p className="text-center text-sm text-gray-500 py-4">Belum ada riwayat pembayaran.</p>
+          ) : (
+            <div className="max-w-full overflow-x-auto">
+              <table className="w-full table-auto">
+                <thead>
+                  <tr className="bg-gray-2 text-left dark:bg-meta-4">
+                    <th className="px-4 py-4 font-medium text-black dark:text-white xl:pl-11">Order ID</th>
+                    <th className="px-4 py-4 font-medium text-black dark:text-white">Tanggal</th>
+                    <th className="px-4 py-4 font-medium text-black dark:text-white">Paket</th>
+                    <th className="px-4 py-4 font-medium text-black dark:text-white">Total</th>
+                    <th className="px-4 py-4 font-medium text-black dark:text-white">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((payment) => (
+                    <tr key={payment.id}>
+                      <td className="border-b border-[#eee] px-4 py-5 pl-9 dark:border-strokedark xl:pl-11">
+                        <p className="text-sm font-medium text-black dark:text-white">{payment.orderId}</p>
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <p className="text-sm text-black dark:text-white">
+                          {new Date(payment.createdAt).toLocaleDateString("id-ID", { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </p>
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <p className="text-sm text-black dark:text-white">{payment.planType}</p>
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <p className="text-sm text-black dark:text-white">Rp {payment.amount.toLocaleString("id-ID")}</p>
+                      </td>
+                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
+                        <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${
+                          payment.status === 'SUCCESS' ? 'bg-success text-success' : 
+                          payment.status === 'PENDING' ? 'bg-warning text-warning' : 'bg-danger text-danger'
+                        }`}>
+                          {payment.status}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

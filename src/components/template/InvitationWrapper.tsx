@@ -17,9 +17,10 @@ interface InvitationWrapperProps {
     guests?: any[];
   };
   guestName: string;
+  isWhiteLabel?: boolean;
 }
 
-export default function InvitationWrapper({ order, guestName }: InvitationWrapperProps) {
+export default function InvitationWrapper({ order, guestName, isWhiteLabel = false }: InvitationWrapperProps) {
   const [isOpen, setIsOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -78,7 +79,7 @@ export default function InvitationWrapper({ order, guestName }: InvitationWrappe
         We render the engine but hide it via CSS or just let it render behind the cover 
         so it preloads fonts/images. Cover is fixed z-50.
       */}
-      <div className={`transition-opacity duration-1000 ${isOpen ? "opacity-100" : "opacity-0 h-screen overflow-hidden"}`}>
+      <div className={`transition-opacity duration-1000 ${isOpen ? "opacity-100" : "opacity-0 h-screen overflow-hidden"} relative pb-16`}>
         <TemplateEngine 
           templateName={templateName}
           data={data}
@@ -87,6 +88,19 @@ export default function InvitationWrapper({ order, guestName }: InvitationWrappe
           guests={guests}
           guestName={guestName}
         />
+        
+        {!isWhiteLabel && isOpen && (
+          <div className="fixed bottom-0 left-0 w-full z-[100] flex justify-center pb-4 pointer-events-none">
+            <a 
+              href={process.env.NEXT_PUBLIC_MAIN_DOMAIN ? `https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN}` : "/"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pointer-events-auto flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 text-xs text-white backdrop-blur-sm transition-all hover:bg-black/80 shadow-lg"
+            >
+              <span>Made with <strong>SaaS Undangan</strong></span>
+            </a>
+          </div>
+        )}
       </div>
     </ThemeProvider>
   );

@@ -10,8 +10,8 @@ const S3 = new S3Client({
   region: "auto",
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY || "",
-    secretAccessKey: process.env.R2_SECRET_KEY || "",
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY || "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || process.env.R2_SECRET_KEY || "",
   },
 });
 
@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
     });
 
     const signedUrl = await getSignedUrl(S3, command, { expiresIn: 3600 });
-    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
+    // Use local proxy to fetch image securely from R2 without requiring public bucket
+    const publicUrl = `/api/image?key=${encodeURIComponent(key)}`;
 
     return NextResponse.json({ signedUrl, publicUrl, key });
   } catch (error: any) {

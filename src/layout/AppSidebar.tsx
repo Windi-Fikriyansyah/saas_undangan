@@ -59,6 +59,11 @@ const orderItems: NavItem[] = [
     name: "Undangan Live",
     path: "/dashboard/orders/live",
   },
+  {
+    icon: <GridIcon />,
+    name: "Templates",
+    path: "/dashboard/templates",
+  },
 ];
 
 const tamuItems: NavItem[] = [
@@ -80,18 +85,6 @@ const tamuItems: NavItem[] = [
   },
 ];
 
-const templateItems: NavItem[] = [
-  {
-    icon: <TableIcon />,
-    name: "Pilih Template",
-    path: "/dashboard/orders/new",
-  },
-  {
-    icon: <BoxCubeIcon />,
-    name: "Preview Template",
-    path: "/preview-engine",
-  },
-];
 
 const laporanItems: NavItem[] = [
   {
@@ -111,6 +104,12 @@ const akunItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     name: "Paket & Billing",
     path: "/dashboard/subscription",
+  },
+  {
+    icon: <GridIcon />,
+    name: "Domain & Branding",
+    path: "/dashboard/domain",
+    pro: true
   },
   {
     icon: <UserCircleIcon />,
@@ -330,10 +329,6 @@ const AppSidebar: React.FC = () => {
             {renderMenuItems(tamuItems, "tamu")}
           </div>
 
-          <div>
-            {renderGroupTitle("TEMPLATE")}
-            {renderMenuItems(templateItems, "template")}
-          </div>
 
           <div>
             {renderGroupTitle("LAPORAN")}

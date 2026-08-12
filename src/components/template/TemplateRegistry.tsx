@@ -14,4 +14,5 @@ export interface TemplateProps {
 export const templateRegistry: Record<string, React.ComponentType<TemplateProps>> = {
   "minimalist-1": dynamic(() => import("./designs/MinimalistTemplate")),
   "rustic-1": dynamic(() => import("./designs/RusticTemplate")),
+  "elegan-1": dynamic(() => import("./designs/EleganTemplate")),
 };

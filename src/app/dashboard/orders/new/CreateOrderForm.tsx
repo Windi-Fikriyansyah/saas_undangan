@@ -110,9 +110,13 @@ export default function CreateOrderForm({ templates = [] }: { templates?: any[] 
                 </div>
               )}
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded bg-gray-100 dark:bg-gray-800">
-                <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                  <span className="text-sm font-medium">{t.name}</span>
-                </div>
+                {t.thumbnailUrl ? (
+                  <Image src={t.thumbnailUrl} alt={t.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                    <span className="text-sm font-medium">{t.name}</span>
+                  </div>
+                )}
               </div>
               <div className="mt-3">
                 <h5 className="font-medium text-black dark:text-white">{t.name}</h5>

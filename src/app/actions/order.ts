@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getTenantPrisma, prisma } from "@/lib/db";
 import { generateClientToken, generateSlug } from "@/lib/utils/token";
+import { PLAN_LIMITS } from "@/lib/constants/billing";
 
 interface CreateOrderParams {
   clientName: string;
@@ -25,6 +26,17 @@ export async function createOrder({
 
   const vendorId = (session?.user as any).id;
   const tenantPrisma = getTenantPrisma(vendorId);
+
+  // Check Quota
+  const vendor = await prisma.vendor.findUnique({ where: { id: vendorId } });
+  if (!vendor) throw new Error("Vendor not found");
+
+  const limits = PLAN_LIMITS[vendor.planType];
+  const orderCount = await prisma.order.count({ where: { vendorId } });
+
+  if (orderCount >= limits.maxOrders) {
+    throw new Error(`Batas kuota pesanan Anda (${limits.maxOrders}) telah habis. Silakan upgrade paket.`);
+  }
 
   // Use provided templateId or grab first active
   let template = await prisma.template.findFirst({
@@ -96,4 +108,33 @@ export async function validateClientToken(token: string) {
   }
 
   return { valid: true, order };
+}
+
+export async function updateOrderData(orderId: string, dataJson: any) {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user as any)?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const vendorId = (session?.user as any).id;
+  const tenantPrisma = getTenantPrisma(vendorId);
+
+  // Parse if string
+  let parsedData = dataJson;
+  if (typeof dataJson === 'string') {
+    try {
+      parsedData = JSON.parse(dataJson);
+    } catch (e) {
+      throw new Error("Invalid JSON data format");
+    }
+  }
+
+  const order = await tenantPrisma.order.update({
+    where: { id: orderId, vendorId },
+    data: {
+      dataJson: parsedData,
+    }
+  });
+
+  return order;
 }

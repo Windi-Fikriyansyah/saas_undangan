@@ -53,12 +53,14 @@ model Vendor {
   logoUrl       String?
   isOnboarded   Boolean   @default(false)
   whiteLabel    Boolean   @default(false)
+  isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   orders   Order[]
   accounts Account[]
   sessions Session[]
+  payments Payment[]
 
   @@map("vendors")
 }
@@ -170,4 +172,20 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  vendorId      String
+  amount        Int
+  planType      PlanType
+  status        String   // PENDING, SUCCESS, FAILED
+  orderId       String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vendor        Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  @@index([vendorId])
+  @@map("payments")
 }

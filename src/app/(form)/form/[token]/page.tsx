@@ -1,6 +1,7 @@
 import { validateClientToken } from "@/app/actions/order";
 import { notFound } from "next/navigation";
 import ClientFormWizard from "@/components/form/ClientFormWizard";
+import ClientGuestManager from "@/components/client/ClientGuestManager";
 
 export default async function ClientFormPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -26,21 +27,31 @@ export default async function ClientFormPage({ params }: { params: Promise<{ tok
 
   const { order } = result;
 
-  // If order is already LIVE, show a completed state
+  // If order is already LIVE, show a completed state and Guest Manager
   if (order.status === "LIVE") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 dark:bg-gray-900">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg dark:bg-gray-800">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-gray-950">
+        <div className="w-full bg-white dark:bg-gray-900 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">Undangan Aktif</h2>
+                <p className="text-xs text-gray-500">Data form terkunci</p>
+              </div>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Form Selesai</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Terima kasih {order.clientName}, data Anda telah berhasil dikunci dan disimpan. Undangan Anda sedang diproses.
-          </p>
         </div>
+
+        <ClientGuestManager 
+          clientToken={token} 
+          clientName={order.clientName}
+          orderSlug={order.slug}
+        />
       </div>
     );
   }
