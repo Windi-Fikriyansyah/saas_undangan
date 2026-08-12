@@ -1,0 +1,563 @@
+
+TECH SPEC DOCUMENT
+SaaS Undangan Digital
+Platform B2B untuk Vendor Undangan Digital
+Versi 1.0  •  Agustus 2026
+DAFTAR ISI
+1. Ringkasan Proyek
+2. Arsitektur Sistem
+3. Tech Stack
+4. Struktur Database
+5. Fitur & Modul
+6. Sistem Template Engine
+7. Personalized Link Tamu
+8. Blast WA & Notifikasi
+9. Multi-Tenancy & Keamanan
+10. Pricing & Paket
+11. Roadmap Pengembangan
+1. Ringkasan Proyek
+SaaS Undangan Digital adalah platform berbasis web yang memungkinkan vendor undangan digital (Wedding Organizer, freelancer, dan agency) membuat, mengelola, dan mendistribusikan undangan pernikahan digital secara masif kepada klien mereka.
+1.1 Target Pengguna
+Vendor Utama: Wedding Organizer, freelancer undangan, agency digital
+End User Klien: Pasangan pengantin yang memesan jasa undangan dari vendor
+Tamu Undangan: Penerima undangan digital personal
+1.2 Model Bisnis
+Tier
+Harga/Bulan
+Kuota Undangan
+Target
+Free Trial
+Rp 0 (14 hari)
+3 undangan
+Onboarding vendor baru
+Starter
+Rp 99.000 – 150.000
+15–20 undangan
+Freelancer/vendor kecil
+Pro
+Rp 300.000 – 500.000
+Unlimited/100 per bulan
+WO kecil-menengah
+Business
+Rp 750.000+ / custom
+Unlimited + white-label
+Agency besar/reseller
+2. Arsitektur Sistem
+2.1 High-Level Architecture
+Sistem dibagi menjadi 4 layer utama:
+Vendor Dashboard (Next.js) — antarmuka untuk vendor mengelola order, template, dan tamu
+Klien Form Page — halaman pengisian data oleh klien via smart link unik
+Undangan Page (SSG/ISR) — halaman undangan yang dilihat tamu, dirender statis untuk performa
+Admin Panel — manajemen platform: vendor, template, billing, analitik
+2.2 Diagram Alur Sistem
+Vendor Dashboard
+  └── Buat Order → Pilih Template → Input Data Minimal
+        └── Generate Smart Link (token 30 hari)
+              └── Kirim ke Klien via WA
+
+Klien Form Page (link unik)
+  └── Step 1: Data Pasangan
+  └── Step 2: Detail Acara (akad, resepsi, Maps)
+  └── Step 3: Galeri Foto (upload)
+  └── Step 4: Musik (library / upload)
+  └── Step 5: Data Tamu (Excel upload / manual)
+  └── Submit → Undangan LIVE otomatis
+
+Undangan Page
+  └── undangan.com/[slug]?to=[nama-tamu]
+  └── Render nama tamu dinamis
+  └── RSVP, Ucapan, Galeri, Maps, Musik
+  └── Tracking: buka, device, waktu
+3. Tech Stack
+Layer
+Teknologi
+Alasan Pemilihan
+Frontend Dashboard
+Next.js 14 + TypeScript
+SSR/SSG, ekosistem matang, banyak talent lokal
+Styling
+Tailwind CSS + shadcn/ui
+Design system cepat, konsisten dengan token
+Undangan Page
+Next.js (ISR/SSG)
+Loading cepat, SEO friendly, ringan di server
+Backend API
+Next.js API Routes / Fastify
+Satu bahasa JS end-to-end, tim kecil lebih efisien
+Database Utama
+PostgreSQL (Supabase)
+Relasional kuat, multi-tenant friendly, gratis tier
+Cache
+Redis (Upstash)
+Cache halaman undangan viral, session management
+Storage Aset
+Cloudflare R2
+Murah, tanpa biaya egress, CDN terintegrasi
+Auth
+NextAuth.js / Supabase Auth
+Multi-provider, session management mudah
+Payment
+Midtrans / Xendit
+Support QRIS, VA, e-wallet, disbursement
+WA Notifikasi
+Fonnte / Wablas / WA Cloud API
+Blast undangan personal per tamu
+Email
+Resend / Nodemailer
+Notifikasi order, invoice, reminder
+Hosting
+Vercel (awal) → VPS Docker
+Auto-scale di awal, migrasi saat sudah scale
+DNS/SSL Otomatis
+Cloudflare API
+Custom domain vendor (tier Business)
+Monitoring
+Sentry + Vercel Analytics
+Error tracking, performance monitoring
+4. Struktur Database
+4.1 Tabel Utama
+vendors
+Kolom
+Tipe
+Keterangan
+id
+UUID PK
+Primary key vendor
+name
+VARCHAR(255)
+Nama bisnis vendor
+email
+VARCHAR(255)
+Email login
+wa_number
+VARCHAR(20)
+Nomor WA vendor
+plan_type
+ENUM
+free_trial / starter / pro / business
+plan_expires_at
+TIMESTAMP
+Tanggal berakhir paket
+quota_used
+INTEGER
+Jumlah undangan aktif bulan ini
+custom_domain
+VARCHAR(255)
+Custom domain (tier Business)
+white_label
+BOOLEAN
+Aktif white-label atau tidak
+created_at
+TIMESTAMP
+Tanggal daftar
+orders
+Kolom
+Tipe
+Keterangan
+id
+UUID PK
+Primary key order
+vendor_id
+UUID FK
+Relasi ke vendors
+template_id
+UUID FK
+Template yang dipilih
+client_name
+VARCHAR(255)
+Nama klien (pengantin)
+client_wa
+VARCHAR(20)
+WA klien untuk kirim smart link
+slug
+VARCHAR(100)
+URL slug undangan (unik)
+client_token
+VARCHAR(64)
+Token untuk klien isi data (expired 30 hari)
+status
+ENUM
+pending / filling / live / expired
+data_json
+JSONB
+Semua data undangan (pasangan, acara, galeri, dsb)
+is_approved
+BOOLEAN
+Vendor sudah review/approve
+created_at
+TIMESTAMP
+Tanggal order dibuat
+live_at
+TIMESTAMP
+Tanggal undangan live
+guests
+Kolom
+Tipe
+Keterangan
+id
+UUID PK
+Primary key tamu
+order_id
+UUID FK
+Relasi ke orders
+name
+VARCHAR(255)
+Nama tamu (muncul di undangan)
+wa_number
+VARCHAR(20)
+Nomor WA untuk blast
+slug
+VARCHAR(100)
+Slug unik tamu (untuk URL ?to=)
+seat_count
+INTEGER
+Jumlah kursi yang dialokasikan
+category
+VARCHAR(100)
+Keluarga / Teman / Kolega dsb
+rsvp_status
+ENUM
+pending / hadir / tidak_hadir / ragu
+rsvp_count
+INTEGER
+Konfirmasi jumlah yang hadir
+message
+TEXT
+Ucapan dari tamu
+opened_at
+TIMESTAMP
+Pertama kali buka undangan
+open_count
+INTEGER
+Total berapa kali dibuka
+last_opened_at
+TIMESTAMP
+Terakhir buka
+wa_sent_at
+TIMESTAMP
+Kapan WA blast dikirim
+wa_status
+ENUM
+pending / sent / delivered / failed
+templates
+Kolom
+Tipe
+Keterangan
+id
+UUID PK
+Primary key template
+name
+VARCHAR(255)
+Nama template
+category
+VARCHAR(100)
+minimalis / rustic / elegan / islami / etnik / playful
+tier
+ENUM
+basic / premium
+config_json
+JSONB
+Konfigurasi warna, font, layout, komponen
+thumbnail_url
+TEXT
+Preview thumbnail template
+is_active
+BOOLEAN
+Template aktif/tidak
+5. Fitur & Modul
+5.1 Vendor Dashboard
+Registrasi & Login (email/password + Google OAuth)
+Dashboard ringkasan: total order, undangan aktif, tamu RSVP, quota tersisa
+Manajemen Order: buat baru, lihat status, edit minor, hapus
+Generate & kirim Smart Link klien (tombol "Kirim via WA" langsung)
+Manajemen Tamu: list tamu, filter status, blast WA, export Excel
+Analitik: undangan paling banyak dibuka, jam ramai, conversion RSVP
+Billing & Upgrade paket (integrasi Midtrans/Xendit)
+5.2 Klien Form Page (Smart Link)
+Multi-step form mobile-friendly (progress bar visual)
+Step 1: Data pasangan (nama, foto profil)
+Step 2: Detail akad & resepsi (tanggal, jam, lokasi, Google Maps link)
+Step 3: Upload foto galeri (drag & drop, kompres otomatis)
+Step 4: Pilih musik dari library atau upload sendiri
+Step 5: Input tamu — upload Excel template atau manual satu-satu
+Preview langsung sebelum submit
+Auto-save per step (jangan sampai data hilang kalau tutup browser)
+5.3 Halaman Undangan (Guest View)
+Cover dengan foto & nama pasangan + countdown timer
+Section detail acara (akad & resepsi) dengan tombol "Buka Maps"
+Galeri foto dengan lightbox
+Musik otomatis play (dengan kontrol mute)
+Guestbook: kolom ucapan & doa dari tamu
+Tombol RSVP (Hadir / Tidak Hadir / Ragu) dengan konfirmasi jumlah
+Nama tamu personal tampil di bagian atas ("Kepada Yth. [Nama Tamu]")
+Tombol share ke WA (tamu bisa forward undangan ke keluarga)
+5.4 Admin Panel (SaaS Owner)
+Manajemen semua vendor: daftar, status plan, usage, suspend/aktifkan
+Manajemen template: upload, edit config, aktif/nonaktif
+Monitoring: total undangan aktif, traffic, error rate
+Revenue dashboard: MRR, churn, new subscriber
+6. Sistem Template Engine
+6.1 Konsep: JSON-driven rendering
+Setiap template hanya menyimpan konfigurasi di database (JSON), bukan halaman HTML terpisah. Satu render engine membaca JSON config + data undangan, lalu menghasilkan tampilan final.
+6.2 Contoh Struktur Config JSON Template
+{
+  "theme": {
+    "primaryColor": "#2D6A4F",
+    "accentColor": "#52B788",
+    "fontHeading": "Playfair Display",
+    "fontBody": "Lato",
+    "borderRadius": "12px"
+  },
+  "sections": [
+    { "type": "cover", "variant": "fullscreen-photo" },
+    { "type": "couple-info", "layout": "centered" },
+    { "type": "event-detail", "showMap": true },
+    { "type": "gallery", "columns": 2 },
+    { "type": "rsvp-form" },
+    { "type": "guestbook" }
+  ],
+  "animations": "fade-slide",
+  "musicAutoPlay": true
+}
+6.3 Kategori Template
+Kategori
+Ciri Khas
+Tier
+Minimalis/Modern
+Warna monokrom, font sans-serif, layout bersih
+Basic
+Rustic/Botanical
+Elemen daun/bunga, warna earth tone
+Basic
+Elegan/Luxury
+Gold accent, font serif, animasi halus
+Premium
+Islami
+Kaligrafi, motif geometris, warna tosca/emas
+Basic & Premium
+Etnik/Tradisional
+Motif batik/daerah, warna khas lokal
+Premium
+Playful/Fun
+Warna cerah, ilustrasi, font playful
+Basic
+7. Sistem Personalized Link Tamu
+7.1 Konsep URL
+Master URL  : undangan.com/budi-ani
+Tamu 1      : undangan.com/budi-ani?to=Pak+Rudi
+Tamu 2      : undangan.com/budi-ani?to=Bu+Sinta
+Tamu 3      : undangan.com/budi-ani?to=Keluarga+Besar+Hasan
+7.2 Cara Kerja Teknis
+Parameter ?to= dibaca oleh render engine di client-side (Next.js useSearchParams)
+Nama tamu ditampilkan di bagian atas undangan secara dinamis
+Setiap load page dengan ?to= → sistem catat event ke tabel guests (open tracking)
+Tamu gak perlu login — identifikasi via kombinasi slug order + nama tamu di param
+7.3 Input Data Tamu oleh Klien
+Opsi A: Upload Excel/CSV
+Klien download template Excel yang disediakan sistem, isi data tamu, lalu upload. Sistem parse otomatis dan generate entri per baris.
+Opsi B: Input Manual
+Form tambah tamu: Nama, Nomor WA, Jumlah Kursi, Kategori
+Bisa tambah satu per satu atau bulk paste
+7.4 Tracking Per Tamu
+Data Tracking
+Keterangan
+opened_at
+Pertama kali tamu buka undangan
+open_count
+Total berapa kali undangan dibuka
+last_opened_at
+Terakhir kali dibuka
+rsvp_status
+Hadir / Tidak Hadir / Ragu / Pending
+rsvp_count
+Berapa orang yang dikonfirmasi hadir
+message
+Ucapan & doa dari tamu
+wa_sent_at
+Kapan WA blast terkirim
+wa_status
+Pending / Sent / Delivered / Failed
+8. Blast WA & Sistem Notifikasi
+8.1 Alur Blast WA ke Tamu
+Vendor klik "Kirim Undangan ke Semua Tamu" di dashboard
+Sistem queue semua nomor tamu ke job processor (Bull/BullMQ dengan Redis)
+Tiap job kirim WA via API (Fonnte/Wablas) dengan pesan personal
+Delay antar pesan 1-3 detik untuk hindari rate limit WA
+Status pengiriman update realtime di dashboard vendor
+8.2 Template Pesan WA Tamu
+Kepada Yth. {nama_tamu} 🙏
+
+Tanpa mengurangi rasa hormat, kami
+mengundang Bapak/Ibu untuk hadir di
+pernikahan kami:
+
+👰🤵 {nama_pengantin_pria} & {nama_pengantin_wanita}
+📅 {tanggal_acara}
+📍 {lokasi_acara}
+
+Buka undangan kami di sini:
+👇
+{link_personal_tamu}
+
+Mohon konfirmasi kehadiran melalui
+link di atas. Terima kasih 🙏
+8.3 Notifikasi ke Vendor & Klien
+Event
+Channel
+Penerima
+Klien submit data → undangan live
+WA + Email
+Vendor
+Tamu RSVP hadir/tidak hadir
+WA (realtime)
+Vendor (summary per jam)
+Quota undangan hampir habis (80%)
+Email
+Vendor
+Plan hampir expired (7 hari)
+WA + Email
+Vendor
+Reminder klien belum isi data (3 hari)
+WA otomatis
+Klien
+Reminder tamu belum RSVP (H-7 acara)
+WA otomatis
+Tamu yang belum RSVP
+9. Multi-Tenancy & Keamanan
+9.1 Isolasi Data per Vendor
+Semua tabel utama memiliki kolom vendor_id — query selalu di-filter dengan vendor_id dari session aktif
+Row-Level Security (RLS) di Supabase/PostgreSQL sebagai layer keamanan tambahan
+Vendor tidak bisa mengakses data vendor lain meski tahu ID-nya
+9.2 Custom Domain (Tier Business)
+Vendor daftarkan custom domain mereka sendiri di dashboard
+Sistem generate instruksi DNS (CNAME ke domain SaaS)
+SSL certificate otomatis via Cloudflare/Let's Encrypt
+Undangan klien mereka berjalan di domain sendiri, tanpa nama platform terlihat
+9.3 Smart Link Keamanan
+Client token untuk form pengisian: JWT atau random UUID 64 karakter, expired 30 hari
+Token single-use: setelah data disubmit, token tidak bisa dipakai untuk edit ulang tanpa approval vendor
+Rate limiting pada endpoint submit data klien dan RSVP tamu
+9.4 Upload Keamanan
+File upload divalidasi tipe (hanya JPG/PNG/MP3/XLSX) dan ukuran maksimum
+Virus scan via ClamAV atau integrasi layanan pihak ketiga sebelum disimpan ke storage
+File disimpan di path per-vendor di R2/S3, bukan path publik bersama
+10. Struktur Paket & Fitur
+Fitur
+Free Trial
+Starter
+Pro
+Business
+Harga/bulan
+Rp 0 (14 hari)
+Rp 99rb–150rb
+Rp 300rb–500rb
+Rp 750rb+
+Kuota undangan
+3
+15–20
+100 / unlimited
+Unlimited
+Max tamu/undangan
+50
+100
+Unlimited
+Unlimited
+Template dasar
+✅
+✅
+✅
+✅
+Template premium
+❌
+❌
+✅
+✅
+Smart link klien
+✅
+✅
+✅
+✅
+Personalized link tamu
+✅
+✅
+✅
+✅
+Tracking buka undangan
+✅
+✅
+✅
+✅
+RSVP per tamu
+✅
+✅
+✅
+✅
+Blast WA otomatis
+❌
+❌
+✅
+✅
+Reminder WA otomatis
+❌
+❌
+✅
+✅
+Export Excel tamu
+❌
+✅
+✅
+✅
+Custom subdomain
+❌
+✅
+✅
+✅
+Custom domain
+❌
+❌
+❌
+✅
+White-label penuh
+❌
+❌
+❌
+✅
+Multi-admin/tim
+❌
+❌
+3 akun
+Unlimited
+Watermark platform
+✅
+❌
+❌
+❌
+Priority support
+❌
+❌
+✅
+✅ + AM khusus
+11. Roadmap Pengembangan
+Phase 1 — MVP (Bulan 1–3)
+Vendor auth + dashboard dasar
+Smart link klien + form pengisian multi-step
+Render engine template (5–10 template dasar)
+Personalized link tamu + RSVP
+Tracking buka undangan
+Notifikasi WA manual (vendor kirim sendiri via link WA Web)
+Payment Midtrans (subscription Starter & Pro)
+Phase 2 — Growth (Bulan 4–6)
+Blast WA otomatis (integrasi Fonnte/Wablas)
+Reminder otomatis (klien & tamu)
+Template premium (10–15 template)
+Export Excel tamu
+Analitik dashboard vendor
+Admin panel SaaS owner
+Phase 3 — Scale (Bulan 7–12)
+White-label & custom domain (tier Business)
+Multi-admin per vendor
+Import Google Contacts
+API publik untuk integrasi pihak ketiga
+Custom template request (layanan premium)
+Mobile app vendor (React Native)
+— End of Document —
