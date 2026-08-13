@@ -49,6 +49,11 @@ const templateItems: NavItem[] = [
     icon: <BoxCubeIcon />,
     name: "Manajemen Template",
     path: "/admin/templates",
+  },
+  {
+    icon: <PlugInIcon />,
+    name: "Scrape Web",
+    path: "/admin/scrape",
   }
 ];
 

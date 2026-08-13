@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useSidebar } from "../context/SidebarContext";
 import {
   BoxCubeIcon,
@@ -123,9 +124,19 @@ const akunItems: NavItem[] = [
   },
 ];
 
+const adminItems: NavItem[] = [
+  {
+    icon: <PlugInIcon />,
+    name: "Scrape Web",
+    path: "/dashboard/scrape",
+  },
+];
+
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.isAdmin === true || session?.user?.email === "diwin6634@gmail.com";
 
   const [openSubmenu, setOpenSubmenu] = useState<{
     type: string;
