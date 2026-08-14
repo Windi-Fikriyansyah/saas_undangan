@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { saveClientFormStep, submitFinalClientForm } from "@/app/actions/client-form";
-import PhoneMockup from "@/components/ui/PhoneMockup";
+import TabletMockup from "@/components/ui/TabletMockup";
 import TemplateEngine from "@/components/template/TemplateEngine";
 import { mapClientDataToWeddingData } from "@/lib/data-mapper";
 
@@ -35,19 +35,40 @@ export default function DynamicHtmlFormWizard({
     const htmlString = rawHtmlBlock?.props?.html;
     if (!htmlString) return [];
 
-    const regex = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g;
-    let match;
-    const vars = new Set<string>();
+    const varMap = new Map<string, string>(); // varName -> label
 
-    while ((match = regex.exec(htmlString)) !== null) {
+    // Extract data-var using regex
+    const tagRegex = /<[^>]+data-var=["']([^"']+)["'][^>]*>/gi;
+    let match;
+    while ((match = tagRegex.exec(htmlString)) !== null) {
+      const tagStr = match[0];
       const varName = match[1].trim();
-      // Ignore system variables that shouldn't be edited by the client
+      
+      // Ignore system variables
       if (varName.startsWith("guest.") || varName.startsWith("wishes.") || varName.startsWith("form.")) {
         continue;
       }
-      vars.add(varName);
+
+      // Try to extract data-tpl-label or data-label
+      const labelMatch = /data-tpl-label=["']([^"']+)["']/i.exec(tagStr);
+      const label = labelMatch ? labelMatch[1].trim() : varName;
+
+      varMap.set(varName, label);
     }
-    return Array.from(vars).sort();
+
+    // Fallback: Also support old {{varName}} formats
+    const oldRegex = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g;
+    while ((match = oldRegex.exec(htmlString)) !== null) {
+      const varName = match[1].trim();
+      if (varName.startsWith("guest.") || varName.startsWith("wishes.") || varName.startsWith("form.")) {
+        continue;
+      }
+      if (!varMap.has(varName)) {
+        varMap.set(varName, varName);
+      }
+    }
+
+    return Array.from(varMap.entries()).map(([varName, label]) => ({ varName, label }));
   }, [templateConfig]);
 
   const methods = useForm({
@@ -154,6 +175,8 @@ export default function DynamicHtmlFormWizard({
               templateName={templateName}
               config={templateConfig}
               data={mapClientDataToWeddingData(watchAllFields)}
+              isPreviewMode={true}
+              isBuilder={false}
             />
           </div>
         </div>
@@ -204,18 +227,18 @@ export default function DynamicHtmlFormWizard({
               
               <div className="space-y-4">
                 {variables.length === 0 ? (
-                  <p className="text-gray-500 text-sm">Tidak ada variabel ({"{{...}}"}) yang ditemukan dalam kode HTML.</p>
+                  <p className="text-gray-500 text-sm">Tidak ada variabel (data-var) yang ditemukan dalam kode HTML.</p>
                 ) : (
                   variables.map((v) => (
-                    <div key={v}>
+                    <div key={v.varName}>
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {v}
+                        {v.label}
                       </label>
                       <input
                         type="text"
-                        {...methods.register(`customData.${v}`)}
+                        {...methods.register(`customData.${v.varName}`)}
                         className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-                        placeholder={`Isi nilai untuk ${v}`}
+                        placeholder={`Isi nilai untuk ${v.label}`}
                       />
                     </div>
                   ))
@@ -238,7 +261,7 @@ export default function DynamicHtmlFormWizard({
       </div>
       
       {/* Right Column: Live Preview (Desktop Only) */}
-      <div className="hidden lg:block w-[350px] shrink-0 sticky top-8 h-[calc(100vh-4rem)]">
+      <div className="hidden lg:block w-[480px] shrink-0 sticky top-8 h-[calc(100vh-4rem)]">
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-blue-500 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
@@ -246,15 +269,17 @@ export default function DynamicHtmlFormWizard({
           </svg>
           Live Preview
         </h3>
-        <PhoneMockup className="scale-[0.9] origin-top">
+        <TabletMockup className="scale-[0.95] origin-top">
           <div className="h-full overflow-y-auto overflow-x-hidden bg-gray-100 relative custom-scrollbar">
             <TemplateEngine 
               templateName={templateName}
               config={templateConfig}
               data={mapClientDataToWeddingData(watchAllFields)}
+              isPreviewMode={true}
+              isBuilder={false}
             />
           </div>
-        </PhoneMockup>
+        </TabletMockup>
       </div>
 
     </div>

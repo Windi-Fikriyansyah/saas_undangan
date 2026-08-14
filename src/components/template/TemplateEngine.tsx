@@ -12,9 +12,11 @@ interface TemplateProps {
   orderId?: string;
   guests?: any[];
   guestName?: string;
+  isPreviewMode?: boolean;
+  isBuilder?: boolean;
 }
 
-export default function TemplateEngine({ templateName, data, config: dbConfig, orderId, guests, guestName }: TemplateProps) {
+export default function TemplateEngine({ templateName, data, config: dbConfig, orderId, guests, guestName, isPreviewMode, isBuilder }: TemplateProps) {
   // Use dbConfig if available, else empty
   const initialConfig = (dbConfig && dbConfig.blocks && dbConfig.blocks.length > 0) ? dbConfig : { blocks: [] };
   
@@ -73,23 +75,25 @@ export default function TemplateEngine({ templateName, data, config: dbConfig, o
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full h-full">
       {/* NEW WEDDING TEMPLATE ENGINE */}
-      <WeddingRenderer config={config} data={{ ...data, guest: guestInfo }} />
+      <WeddingRenderer config={config} data={{ ...data, guest: guestInfo }} isPreviewMode={isPreviewMode} />
 
       {/* FLOATING ADMIN CONTROLS */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-        <button
-          onClick={() => setIsConfigDrawerOpen(true)}
-          className="w-12 h-12 rounded-full bg-[#0F211B]/80 backdrop-blur-xl flex items-center justify-center text-[#F5F3EF] border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
-          title="Edit JSON Config"
-        >
-          <Code className="w-5 h-5 text-[#D4AF37]" />
-        </button>
-      </div>
+      {isBuilder && (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
+          <button
+            onClick={() => setIsConfigDrawerOpen(true)}
+            className="w-12 h-12 rounded-full bg-[#0F211B]/80 backdrop-blur-xl flex items-center justify-center text-[#F5F3EF] border border-[#D4AF37]/50 shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
+            title="Edit JSON Config"
+          >
+            <Code className="w-5 h-5 text-[#D4AF37]" />
+          </button>
+        </div>
+      )}
 
       {/* LIVE JSON SCHEMA CONFIG DRAWER */}
-      {isConfigDrawerOpen && (
+      {isBuilder && isConfigDrawerOpen && (
         <div className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-md flex justify-end">
           <div className="w-full max-w-xl bg-[#0F211B] border-l border-white/10 p-6 flex flex-col h-full shadow-2xl">
             <div className="flex justify-between items-center mb-4 pb-3 border-b border-white/10">

@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db";
 import React from "react";
 import Link from "next/link";
 import TemplateModal from "./TemplateModal";
-import ImportHtmlModal from "./ImportHtmlModal";
 
 export const revalidate = 0;
 
@@ -22,7 +21,12 @@ export default async function AdminTemplatesPage() {
         </div>
         <div className="flex items-center">
           <TemplateModal />
-          <ImportHtmlModal />
+          <Link
+            href="/admin/templates/builder"
+            className="rounded bg-gray-800 px-4 py-2 font-medium text-white hover:bg-gray-700 ml-3"
+          >
+            Import HTML
+          </Link>
         </div>
       </div>
 

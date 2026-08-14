@@ -34,21 +34,6 @@ export default function TemplateModal({ template }: { template?: any }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      let finalConfigStr = formData.configJson;
-      if (isCustomHtmlInit) {
-        // Rebuild JSON with updated HTML
-        const configObj = template?.configJson ? { ...template.configJson } : { blocks: [] };
-        if (!configObj.blocks) configObj.blocks = [];
-        const rawBlockIndex = configObj.blocks.findIndex((b: any) => b.type === "raw-html");
-        if (rawBlockIndex >= 0) {
-          if (!configObj.blocks[rawBlockIndex].props) configObj.blocks[rawBlockIndex].props = {};
-          configObj.blocks[rawBlockIndex].props.html = formData.htmlContent;
-        } else {
-          configObj.blocks.push({ id: "html-template", type: "raw-html", props: { html: formData.htmlContent } });
-        }
-        finalConfigStr = JSON.stringify(configObj);
-      }
-
       await upsertTemplate({
         id: formData.id,
         name: formData.name,
@@ -56,7 +41,7 @@ export default function TemplateModal({ template }: { template?: any }) {
         tier: formData.tier,
         isActive: formData.isActive,
         thumbnailUrl: formData.thumbnailUrl,
-        configJson: finalConfigStr
+        configJson: formData.configJson
       });
       setIsOpen(false);
       window.location.reload();
@@ -112,39 +97,10 @@ export default function TemplateModal({ template }: { template?: any }) {
                   <input type="url" name="thumbnailUrl" value={formData.thumbnailUrl} onChange={handleChange} className="w-full rounded border border-stroke bg-transparent px-4 py-2 outline-none dark:border-strokedark" />
                 </div>
                 <div className="col-span-2">
-                  {isCustomHtmlInit ? (
-                    <>
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="block text-sm font-medium text-black dark:text-white">Raw HTML Code</label>
-                        <span className="text-xs text-gray-500">Gunakan sintaks <code>{`{{guest.name}}`}</code> dsb</span>
-                      </div>
-                      <textarea name="htmlContent" value={formData.htmlContent} onChange={handleChange} required rows={10} className="w-full rounded border border-stroke bg-transparent px-4 py-2 outline-none dark:border-strokedark font-mono text-sm"></textarea>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="block text-sm font-medium text-black dark:text-white">Config JSON</label>
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            const blob = new Blob([JSON.stringify(defaultTemplate, null, 2)], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = 'format-tema.json';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="text-xs text-brand-500 hover:underline"
-                        >
-                          Download Format JSON
-                        </button>
-                      </div>
-                      <textarea name="configJson" value={formData.configJson} onChange={handleChange} required rows={8} className="w-full rounded border border-stroke bg-transparent px-4 py-2 outline-none dark:border-strokedark font-mono text-sm"></textarea>
-                    </>
-                  )}
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-black dark:text-white">HTML Template</label>
+                    <span className="text-xs text-gray-500">Edit HTML melalui fitur Import HTML / Visual Editor</span>
+                  </div>
                 </div>
                 <div className="col-span-2 flex items-center gap-2">
                   <input type="checkbox" name="isActive" checked={formData.isActive} onChange={handleChange} id={`isActive-${formData.id}`} />
