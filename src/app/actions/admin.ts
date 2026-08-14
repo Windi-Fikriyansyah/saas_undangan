@@ -12,6 +12,14 @@ async function checkAdmin() {
   }
 }
 
+export async function getTemplateById(id: string) {
+  await checkAdmin();
+  const template = await prisma.template.findUnique({
+    where: { id }
+  });
+  return template;
+}
+
 export async function updateVendorPlan(vendorId: string, planType: string) {
   await checkAdmin();
   

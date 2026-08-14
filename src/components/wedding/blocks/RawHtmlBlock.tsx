@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
 export default function RawHtmlBlock({ html, data }: { html: string, data?: any }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -9,6 +9,20 @@ export default function RawHtmlBlock({ html, data }: { html: string, data?: any 
 
   const scriptToInject = `
     <script>
+      // Mock URLSearchParams so the template can read query parameters from the parent window
+      (function() {
+        try {
+          const parentSearch = window.parent.location.search;
+          const OriginalURLSearchParams = window.URLSearchParams;
+          window.URLSearchParams = function(init) {
+            if (init === undefined || init === '' || init === window.location.search) {
+              return new OriginalURLSearchParams(parentSearch);
+            }
+            return new OriginalURLSearchParams(init);
+          };
+        } catch(e) {} // Ignore cross-origin errors if any
+      })();
+
       window.addEventListener('DOMContentLoaded', () => {
         const data = ${JSON.stringify(data || {})};
         
@@ -34,7 +48,7 @@ export default function RawHtmlBlock({ html, data }: { html: string, data?: any 
         });
       });
     </script>
-  `;
+    `;
 
   const finalHtml = html + scriptToInject;
 

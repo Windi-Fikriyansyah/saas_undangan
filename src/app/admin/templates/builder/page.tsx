@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { upsertTemplate } from "@/app/actions/admin";
+import React, { useState, useRef, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { upsertTemplate, getTemplateById } from "@/app/actions/admin";
 
-export default function TemplateBuilderPage() {
+function BuilderContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("id");
   const [isLoading, setIsLoading] = useState(false);
   
   const [meta, setMeta] = useState({
-    id: "",
+    id: editId || "",
     name: "",
     category: "Custom HTML",
     tier: "PREMIUM",
@@ -20,7 +22,15 @@ export default function TemplateBuilderPage() {
   const [rawInput, setRawInput] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const cleanDocRef = useRef<string>("");
   const [workspaceVisible, setWorkspaceVisible] = useState(false);
+  
+  const [isSelectMode, setIsSelectMode] = useState(true);
+  const isSelectModeRef = useRef(true);
+  const toggleMode = (mode: boolean) => {
+    setIsSelectMode(mode);
+    isSelectModeRef.current = mode;
+  };
   
   const selectedElRef = useRef<HTMLElement | null>(null);
   const [selectedInfo, setSelectedInfo] = useState<{
@@ -33,6 +43,36 @@ export default function TemplateBuilderPage() {
 
   const [bindings, setBindings] = useState<Array<{label: string, varName: string}>>([]);
   const [exportOutput, setExportOutput] = useState("");
+
+  useEffect(() => {
+    if (editId) {
+      getTemplateById(editId).then((template) => {
+        if (template) {
+          setMeta({
+            id: template.id,
+            name: template.name,
+            category: template.category,
+            tier: template.tier,
+            isActive: template.isActive,
+            thumbnailUrl: template.thumbnailUrl || "",
+          });
+          
+          let htmlCode = "";
+          if (template.configJson && (template.configJson as any).blocks) {
+             const rawBlock = (template.configJson as any).blocks.find((b: any) => b.type === "raw-html");
+             if (rawBlock && rawBlock.props && rawBlock.props.html) {
+               htmlCode = rawBlock.props.html;
+             }
+          }
+          if (htmlCode) {
+            setRawInput(htmlCode);
+            setPreviewHtml(htmlCode);
+            setWorkspaceVisible(true);
+          }
+        }
+      }).catch(console.error);
+    }
+  }, [editId]);
 
   const handleMetaChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -53,7 +93,29 @@ export default function TemplateBuilderPage() {
 
   const loadPreview = () => {
     if(!rawInput.trim()) return;
-    setPreviewHtml(rawInput);
+
+    // Create a pristine DOM, assign IDs to map back later
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(rawInput, 'text/html');
+    let idCounter = 1;
+    doc.querySelectorAll('*').forEach(el => {
+      el.setAttribute('data-builder-id', idCounter.toString());
+      idCounter++;
+    });
+
+    const isFullDoc = /<html[\s>]/i.test(rawInput);
+    let pristineHtml = "";
+    if (isFullDoc) {
+      const hasDoctype = /<!DOCTYPE/i.test(rawInput);
+      pristineHtml = (hasDoctype ? "<!DOCTYPE html>\n" : "") + doc.documentElement.outerHTML;
+    } else {
+      const headContent = doc.head.innerHTML.trim();
+      const bodyContent = doc.body.innerHTML.trim();
+      pristineHtml = (headContent ? headContent + "\n" : "") + bodyContent;
+    }
+
+    cleanDocRef.current = pristineHtml;
+    setPreviewHtml(pristineHtml);
     setWorkspaceVisible(true);
     selectedElRef.current = null;
     setSelectedInfo(null);
@@ -105,6 +167,7 @@ export default function TemplateBuilderPage() {
     }
 
     doc.body.addEventListener('mouseover', e => {
+      if(!isSelectModeRef.current) return;
       const el = e.target as HTMLElement;
       if(el === selectedElRef.current || el.hasAttribute('data-var')) return;
       el.style.outline = '2px solid #8fb3a6';
@@ -113,6 +176,7 @@ export default function TemplateBuilderPage() {
     });
 
     doc.body.addEventListener('mouseout', e => {
+      if(!isSelectModeRef.current) return;
       const el = e.target as HTMLElement;
       if(el === selectedElRef.current || el.hasAttribute('data-var')) return;
       el.style.outline = '';
@@ -120,6 +184,7 @@ export default function TemplateBuilderPage() {
     });
 
     doc.body.addEventListener('click', e => {
+      if(!isSelectModeRef.current) return;
       e.preventDefault();
       e.stopPropagation();
       let el = e.target as HTMLElement;
@@ -222,7 +287,7 @@ export default function TemplateBuilderPage() {
       varName: el.getAttribute('data-var') || ''
     })));
     
-    generateExportOutput(doc);
+    generateExportOutput();
   };
 
   const jumpToBinding = (idx: number) => {
@@ -232,29 +297,53 @@ export default function TemplateBuilderPage() {
     if(bound[idx]) selectElement(bound[idx]);
   };
 
-  const generateExportOutput = (doc: Document) => {
-    const clone = doc.documentElement.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll('[data-var]').forEach(el => {
-      const htmlEl = el as HTMLElement;
-      htmlEl.style.outline = '';
-      htmlEl.style.outlineOffset = '';
-      htmlEl.style.backgroundColor = '';
-      if(htmlEl.getAttribute('style') === '') htmlEl.removeAttribute('style');
+  const generateExportOutput = () => {
+    const runningDoc = iframeRef.current?.contentDocument;
+    if(!runningDoc || !cleanDocRef.current) return;
+
+    // Parse the pristine HTML
+    const parser = new DOMParser();
+    const exportDoc = parser.parseFromString(cleanDocRef.current, 'text/html');
+
+    // Transfer data-var
+    runningDoc.querySelectorAll('[data-var]').forEach(el => {
+      const builderId = el.getAttribute('data-builder-id');
+      const varName = el.getAttribute('data-var');
+      const tplLabel = el.dataset.tplLabel;
+      
+      if (builderId && varName) {
+        const targetEl = exportDoc.querySelector(`[data-builder-id="${builderId}"]`);
+        if (targetEl) {
+          targetEl.setAttribute('data-var', varName);
+          if (tplLabel) targetEl.setAttribute('data-tpl-label', tplLabel);
+        }
+      }
+    });
+
+    // Clean up builder IDs
+    exportDoc.querySelectorAll('[data-builder-id]').forEach(el => {
+      el.removeAttribute('data-builder-id');
     });
 
     const isFullDoc = /<html[\s>]/i.test(rawInput);
-    let output;
-    if(isFullDoc){
-      output = '<!DOCTYPE html>\n' + clone.outerHTML;
+    let output = "";
+    if (isFullDoc) {
+      const hasDoctype = /<!DOCTYPE/i.test(rawInput);
+      output = (hasDoctype ? "<!DOCTYPE html>\n" : "") + exportDoc.documentElement.outerHTML;
     } else {
-      output = clone.querySelector('body') ? clone.querySelector('body')!.innerHTML.trim() : clone.outerHTML;
+      const headContent = exportDoc.head.innerHTML.trim();
+      const bodyContent = exportDoc.body.innerHTML.trim();
+      output = (headContent ? headContent + "\n" : "") + bodyContent;
     }
+    
     setExportOutput(output);
   };
 
   const copyExport = () => {
     navigator.clipboard && navigator.clipboard.writeText(exportOutput).catch(() => {});
   };
+
+  const uniqueBindings = Array.from(new Map(bindings.map(b => [b.varName, b])).values());
 
   const handleSaveTemplate = async () => {
     if(!meta.id || !meta.name) {
@@ -397,8 +486,24 @@ export default function TemplateBuilderPage() {
           {workspaceVisible && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6">
-                <h3 className="font-medium text-black dark:text-white mb-2 uppercase text-xs tracking-wider">2. Klik elemen di preview</h3>
-                <div className="rounded-lg border border-dashed border-stroke bg-white overflow-hidden dark:border-strokedark">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium text-black dark:text-white uppercase text-xs tracking-wider">2. Klik elemen di preview</h3>
+                  <div className="flex bg-gray-100 rounded-md p-1 border border-stroke dark:bg-meta-4 dark:border-strokedark">
+                    <button 
+                      onClick={() => toggleMode(true)} 
+                      className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${isSelectMode ? 'bg-white shadow-sm text-brand-500' : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white'}`}
+                    >
+                      Mode Pilih
+                    </button>
+                    <button 
+                      onClick={() => toggleMode(false)} 
+                      className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${!isSelectMode ? 'bg-white shadow-sm text-brand-500' : 'text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white'}`}
+                    >
+                      Mode Interaksi
+                    </button>
+                  </div>
+                </div>
+                <div className={`rounded-lg border border-dashed border-stroke bg-white overflow-hidden dark:border-strokedark transition-all ${isSelectMode ? 'ring-2 ring-brand-500 ring-offset-2' : ''}`}>
                   <iframe 
                     ref={iframeRef} 
                     id="preview" 
@@ -448,6 +553,27 @@ export default function TemplateBuilderPage() {
                         {`{{${selectedInfo.varName || '...'}}}`}
                       </div>
                     </div>
+                    
+                    {uniqueBindings.length > 0 && (
+                      <div className="mb-4 pt-3 border-t border-stroke dark:border-strokedark">
+                        <label className="mb-1 block text-xs font-semibold text-gray-500 dark:text-gray-400">Atau pilih dari yang sudah ada:</label>
+                        <select 
+                          className="w-full rounded border border-stroke px-3 py-1.5 text-sm outline-none focus:border-brand-500 dark:border-strokedark dark:bg-boxdark text-gray-700 dark:text-gray-300"
+                          onChange={(e) => {
+                            const b = uniqueBindings.find(x => x.varName === e.target.value);
+                            if (b && selectedInfo) {
+                              setSelectedInfo({ ...selectedInfo, varName: b.varName, label: b.label });
+                            }
+                          }}
+                          value=""
+                        >
+                          <option value="" disabled>-- Pilih Variabel --</option>
+                          {uniqueBindings.map(b => (
+                            <option key={b.varName} value={b.varName}>{b.label} ({b.varName})</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
                     <div className="flex gap-2">
                       <button onClick={applyCurrentBinding} className="rounded bg-brand-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-600">
@@ -462,20 +588,20 @@ export default function TemplateBuilderPage() {
                   </div>
                 )}
 
-                <h3 className="font-medium text-black dark:text-white mb-2 mt-6 uppercase text-xs tracking-wider">Daftar Variabel</h3>
-                {bindings.length === 0 ? (
+                <h3 className="font-medium text-black dark:text-white mb-2 mt-6 uppercase text-xs tracking-wider">Daftar Variabel Unik ({uniqueBindings.length})</h3>
+                {uniqueBindings.length === 0 ? (
                   <p className="text-sm text-gray-500">Belum ada variabel dibuat.</p>
                 ) : (
                   <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-                    {bindings.map((b, idx) => (
+                    {uniqueBindings.map((b, idx) => (
                       <div key={idx} className="flex items-center justify-between rounded border border-stroke p-2 dark:border-strokedark">
                         <div className="flex flex-col overflow-hidden">
                           <span className="text-xs font-semibold text-black dark:text-white">{b.label}</span>
                           <span className="font-mono text-xs text-brand-600 dark:text-brand-300">{`{{${b.varName}}}`}</span>
                         </div>
-                        <button onClick={() => jumpToBinding(idx)} className="rounded border border-stroke bg-gray-50 px-2 py-1 text-xs font-medium hover:bg-gray-100 dark:border-strokedark dark:bg-meta-4">
-                          Pilih
-                        </button>
+                        <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded dark:bg-meta-4 dark:text-gray-300">
+                          {bindings.filter(x => x.varName === b.varName).length}x dipakai
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -499,5 +625,13 @@ export default function TemplateBuilderPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TemplateBuilderPage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Loading template...</div>}>
+      <BuilderContent />
+    </Suspense>
   );
 }

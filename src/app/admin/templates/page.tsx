@@ -85,7 +85,12 @@ export default async function AdminTemplatesPage() {
               >
                 Preview
               </Link>
-              <TemplateModal template={template} />
+              <Link
+                href={`/admin/templates/builder?id=${template.id}`}
+                className="text-sm font-medium text-warning hover:underline"
+              >
+                Edit HTML
+              </Link>
             </div>
           </div>
         ))}
