@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import React from "react";
+import Link from "next/link";
 import TemplateModal from "./TemplateModal";
+import ImportHtmlModal from "./ImportHtmlModal";
 
 export const revalidate = 0;
 
@@ -14,17 +16,20 @@ export default async function AdminTemplatesPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-title-md2 font-semibold text-black dark:text-white">
-            Manajemen Template
+            Manajemen Tema
           </h2>
-          <p className="text-sm text-gray-500">Daftar semua template undangan yang tersedia untuk klien.</p>
+          <p className="text-sm text-gray-500">Daftar semua tema undangan yang tersedia untuk klien.</p>
         </div>
-        <TemplateModal />
+        <div className="flex items-center">
+          <TemplateModal />
+          <ImportHtmlModal />
+        </div>
       </div>
 
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="grid grid-cols-6 border-b border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-7 md:px-6 2xl:px-7.5">
           <div className="col-span-2 flex items-center">
-            <p className="font-medium">ID & Nama Template</p>
+            <p className="font-medium">ID & Nama Tema</p>
           </div>
           <div className="col-span-1 flex items-center">
             <p className="font-medium">Kategori</p>
@@ -59,7 +64,7 @@ export default async function AdminTemplatesPage() {
               </p>
             </div>
             <div className="col-span-1 flex items-center">
-              <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-xs font-medium ${template.tier === 'PREMIUM' ? 'bg-warning text-warning' : 'bg-primary text-primary'}`}>
+              <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-xs font-medium ${template.tier === 'PREMIUM' ? 'bg-warning text-warning' : 'bg-brand-500 text-brand-500'}`}>
                 {template.tier}
               </p>
             </div>
@@ -68,7 +73,14 @@ export default async function AdminTemplatesPage() {
                 {template.isActive ? "Aktif" : "Nonaktif"}
               </p>
             </div>
-            <div className="col-span-2 flex items-center justify-end gap-2">
+            <div className="col-span-2 flex items-center justify-end gap-3">
+              <Link
+                href={`/preview/template/${template.id}`}
+                target="_blank"
+                className="text-sm font-medium text-brand-500 hover:underline"
+              >
+                Preview
+              </Link>
               <TemplateModal template={template} />
             </div>
           </div>

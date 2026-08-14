@@ -1,0 +1,7 @@
+"use client";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+
+export default function Lightbox({ images, index, onClose, onChange }: { images: { src: string; alt?: string }[]; index: number | null; onClose: () => void; onChange: (i: number) => void }) {
+  return <AnimatePresence>{index !== null && <motion.div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex items-center justify-center p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}><button aria-label="Close" className="absolute top-5 right-5 glass rounded-full p-3" onClick={onClose}><X /></button><button aria-label="Previous" className="absolute left-4 glass rounded-full p-3" onClick={(e) => { e.stopPropagation(); onChange((index - 1 + images.length) % images.length); }}><ChevronLeft /></button><motion.img key={images[index].src} src={images[index].src} alt={images[index].alt ?? "Gallery image"} className="max-h-[88vh] max-w-[92vw] object-contain rounded-xl" initial={{ scale: .92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: .35 }} onClick={(e) => e.stopPropagation()} /><button aria-label="Next" className="absolute right-4 glass rounded-full p-3" onClick={(e) => { e.stopPropagation(); onChange((index + 1) % images.length); }}><ChevronRight /></button></motion.div>}</AnimatePresence>;
+}

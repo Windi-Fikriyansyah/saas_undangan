@@ -5,6 +5,7 @@ import InvitationCover from "./InvitationCover";
 import TemplateEngine from "./TemplateEngine";
 import ThemeProvider from "./ThemeProvider";
 import { ClientFormData } from "@/lib/validations/client-form";
+import { mapClientDataToWeddingData } from "@/lib/data-mapper";
 
 interface InvitationWrapperProps {
   order: {
@@ -24,17 +25,20 @@ export default function InvitationWrapper({ order, guestName, isWhiteLabel = fal
   const [isOpen, setIsOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const data = order.dataJson as ClientFormData;
+  const rawData = order.dataJson as ClientFormData;
+  const data = mapClientDataToWeddingData(rawData);
   const config = order.template.configJson;
   const templateName = order.template.id;
   const orderId = order.id;
   const guests = order.guests || [];
 
-  const bride = data.step1?.brideNickname || "Romeo";
-  const groom = data.step1?.groomNickname || "Juliet";
+  const bride = data.couple.bride || "Wanita";
+  const groom = data.couple.groom || "Pria";
   
   // Dummy audio for demonstration if none is provided. In future, this can come from `data`
   const audioUrl = "/audio/wedding-bgm.mp3"; 
+
+  const isCustomHtmlTheme = config?.blocks?.some((b: any) => b.type === "raw-html");
 
   const handleOpen = () => {
     setIsOpen(true);
@@ -65,7 +69,7 @@ export default function InvitationWrapper({ order, guestName, isWhiteLabel = fal
 
   return (
     <ThemeProvider config={config}>
-      {!isOpen && (
+      {!isCustomHtmlTheme && !isOpen && (
         <InvitationCover 
           guestName={guestName} 
           bride={bride} 
@@ -79,7 +83,7 @@ export default function InvitationWrapper({ order, guestName, isWhiteLabel = fal
         We render the engine but hide it via CSS or just let it render behind the cover 
         so it preloads fonts/images. Cover is fixed z-50.
       */}
-      <div className={`transition-opacity duration-1000 ${isOpen ? "opacity-100" : "opacity-0 h-screen overflow-hidden"} relative pb-16`}>
+      <div className={isCustomHtmlTheme ? "relative w-full h-screen" : `transition-opacity duration-1000 ${isOpen ? "opacity-100" : "opacity-0 h-screen overflow-hidden"} relative pb-16`}>
         <TemplateEngine 
           templateName={templateName}
           data={data}
@@ -89,7 +93,7 @@ export default function InvitationWrapper({ order, guestName, isWhiteLabel = fal
           guestName={guestName}
         />
         
-        {!isWhiteLabel && isOpen && (
+        {!isWhiteLabel && (isOpen || isCustomHtmlTheme) && (
           <div className="fixed bottom-0 left-0 w-full z-[100] flex justify-center pb-4 pointer-events-none">
             <a 
               href={process.env.NEXT_PUBLIC_MAIN_DOMAIN ? `https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN}` : "/"}

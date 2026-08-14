@@ -3,7 +3,6 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import UploadTemplateForm from "./UploadTemplateForm";
 
 export default async function TemplatesPage() {
   const session = await getServerSession(authOptions);
@@ -25,18 +24,7 @@ export default async function TemplatesPage() {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-9 sm:grid-cols-2">
-        <div className="flex flex-col gap-9">
-          <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-            <div className="border-b border-stroke px-4 py-4 dark:border-strokedark sm:px-6 xl:px-7.5">
-              <h3 className="font-medium text-black dark:text-white">
-                Upload JSON Template
-              </h3>
-            </div>
-            <UploadTemplateForm />
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 gap-9">
         <div className="flex flex-col gap-9">
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke px-4 py-4 dark:border-strokedark sm:px-6 xl:px-7.5">

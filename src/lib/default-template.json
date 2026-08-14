@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "colors": {
+    "background": "#111612",
+    "foreground": "#F5F2EA",
+    "primary": "#D8D0BD",
+    "secondary": "#879181",
+    "accent": "#C8B58A",
+    "muted": "#A8AEA4",
+    "dark": "#0B0D0C",
+    "glass": "rgba(255,255,255,0.13)",
+    "border": "rgba(255,255,255,0.24)"
+  },
+  "typography": {
+    "heading": { "family": "Cormorant Garamond, serif", "weight": 400 },
+    "body": { "family": "DM Sans, sans-serif", "weight": 400 }
+  },
+  "settings": {
+    "theme": "luxury-cinematic",
+    "smoothScroll": true,
+    "navigation": { "enabled": true, "labels": { "home": "Home", "couple": "Bride & Groom", "event": "Wedding Event", "gallery": "Gallery", "rsvp": "RSVP", "gift": "Gift", "souvenir": "Souvenir Card" } },
+    "music": { "enabled": true, "autoplay": false, "loop": true, "volume": 0.35, "source": "/music/wedding.mp3" }
+  },
+  "blocks": [
+    { "id": "cover", "type": "cover", "props": { "background": { "type": "image", "src": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1800&q=85", "position": "center", "size": "cover", "overlay": "rgba(5,8,6,.52)" }, "eyebrow": "THE WEDDING OF", "groom": "Aral", "bride": "Patricia", "date": "24 . 08 . 2026", "description": "A beautiful beginning to a lifetime together.", "button": { "text": "OPEN INVITATION" } }, "animation": { "type": "blur-to-sharp", "duration": 1.2 } },
+    { "id": "home", "type": "home", "props": { "background": { "type": "image", "src": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1800&q=85", "position": "center", "size": "cover", "overlay": "rgba(5,8,6,.48)", "parallax": true }, "eyebrow": "WELCOME", "title": "Aral & Patricia", "personalized": { "label": "Personalized for", "guestName": "{{guest.name}}", "parents": "{{guest.parents}}" }, "social": { "platform": "instagram", "username": "@aralpatricia" } }, "animation": { "type": "fade-up", "duration": 1 } },
+    { "id": "couple", "type": "couple", "props": { "eyebrow": "THE COUPLE", "title": "Bride & Groom", "intro": "Two souls, one beautiful journey.", "bride": { "label": "THE BRIDE", "name": "Patricia", "fullName": "Patricia Amanda Putri", "description": "Daughter of Mr. John Doe & Mrs. Jane Doe", "image": "https://images.unsplash.com/photo-1529634597503-139d3726fed5?auto=format&fit=crop&w=1000&q=85", "instagram": "@patricia" }, "groom": { "label": "THE GROOM", "name": "Aral", "fullName": "Aral Pratama", "description": "Son of Mr. Michael Doe & Mrs. Anna Doe", "image": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1000&q=85", "instagram": "@aral" } }, "animation": { "type": "fade-up", "duration": 0.9 } },
+    { "id": "event", "type": "event", "props": { "background": { "type": "image", "src": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1800&q=85", "position": "center", "size": "cover", "overlay": "rgba(8,12,9,.60)", "parallax": true }, "eyebrow": "SAVE THE DATE", "title": "Wedding Event", "date": "24 August 2026", "countdown": { "enabled": true, "target": "2026-08-24T08:00:00+07:00" }, "events": [ { "type": "CEREMONY", "title": "Akad Nikah", "time": "08:00 - 10:00 WIB", "venue": "The Grand Ballroom", "address": "Jakarta", "mapUrl": "https://maps.google.com" }, { "type": "RECEPTION", "title": "Wedding Reception", "time": "11:00 - 14:00 WIB", "venue": "The Grand Ballroom", "address": "Jakarta", "mapUrl": "https://maps.google.com" } ] }, "animation": { "type": "fade-up", "duration": 0.9 } },
+    { "id": "gallery", "type": "gallery", "props": { "eyebrow": "OUR MOMENTS", "title": "Gallery", "description": "A collection of moments we will always remember.", "layout": "masonry", "lightbox": true, "images": [ { "src": "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1000&q=85" }, { "src": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=85" }, { "src": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1000&q=85" }, { "src": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1000&q=85" }, { "src": "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&w=1000&q=85" } ] }, "animation": { "type": "clip-reveal", "duration": 1 } },
+    { "id": "rsvp", "type": "rsvp", "props": { "background": { "type": "image", "src": "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=1800&q=85", "position": "center", "size": "cover", "overlay": "rgba(8,12,9,.67)" }, "eyebrow": "KINDLY RESPOND", "title": "Are You Attending?", "description": "We would be delighted to celebrate this special moment with you.", "endpoint": "/api/rsvp", "form": { "enabled": true } }, "animation": { "type": "fade-up", "duration": 0.9 } },
+    { "id": "gift", "type": "gift", "props": { "eyebrow": "WEDDING GIFT", "title": "Your Presence Is Our Greatest Gift", "description": "Your presence and prayers are already the greatest gift. However, if you wish to send a gift, we provide the following option.", "accounts": [ { "bank": "BCA", "number": "1234567890", "name": "Aral & Patricia" }, { "bank": "MANDIRI", "number": "9876543210", "name": "Aral & Patricia" } ], "qrCode": { "enabled": false } }, "animation": { "type": "fade-up", "duration": 0.9 } },
+    { "id": "souvenir", "type": "souvenir", "props": { "background": { "type": "image", "src": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1800&q=85", "position": "center", "size": "cover", "overlay": "rgba(8,12,9,.58)" }, "eyebrow": "A LITTLE REMINDER", "title": "Souvenir Card", "description": "A little memory from our special day.", "card": { "guestName": "{{guest.name}}", "couple": "Aral & Patricia", "date": "24.08.2026", "location": "Jakarta", "number": "{{guest.souvenirNumber}}", "image": "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=85" }, "interaction": { "tilt": true } }, "animation": { "type": "3d-reveal", "duration": 1 } },
+    { "id": "closing", "type": "closing", "props": { "background": { "type": "image", "src": "https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1800&q=85", "position": "center", "size": "cover", "overlay": "rgba(5,8,6,.56)", "parallax": true }, "eyebrow": "WITH LOVE", "title": "Thank You", "names": "Aral & Patricia", "date": "24.08.2026", "quote": "Two souls, one heart, one beautiful journey.", "signature": "With Love" }, "animation": { "type": "blur-to-sharp", "duration": 1.2 } }
+  ],
+  "data": { "guest": { "name": "Tamu Undangan", "parents": "Bapak Nama Bapak & Ibu Nama Ibu", "souvenirNumber": "001" } }
+}

@@ -37,12 +37,12 @@ export const step4Schema = z.object({
   quotes: z.string().optional(),
 });
 
-// A combined schema for the entire dataJson
 export const clientFormSchema = z.object({
   step1: step1Schema.optional(),
   step2: step2Schema.optional(),
   step3: step3Schema.optional(),
   step4: step4Schema.optional(),
+  customData: z.record(z.any()).optional(),
   isCompleted: z.boolean().default(false),
 });
 

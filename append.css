@@ -1,0 +1,15 @@
+
+/* Wedding Template Engine Styles */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&family=Great+Vibes&display=swap');
+
+.wedding-root { --font-heading: 'Cormorant Garamond', serif; --font-body: 'DM Sans', sans-serif; min-height: 100vh; background: var(--w-bg); color: var(--w-fg); overflow-x: clip; }
+.font-heading { font-family: var(--font-heading); }
+.glass { background: var(--w-glass); border: 1px solid var(--w-border); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); box-shadow: 0 20px 80px rgba(0,0,0,.18); }
+.wedding-section { position: relative; isolation: isolate; }
+.wedding-input { width: 100%; border: 1px solid var(--w-border); background: rgba(255,255,255,.06); color: var(--w-fg); border-radius: 16px; padding: 14px 16px; outline: none; transition: .25s; }
+.wedding-input:focus { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.1); }
+.wedding-input::placeholder { color: rgba(255,255,255,.5); }
+.responsive-frame { --r-padding: var(--r-d-padding); --r-min-height: var(--r-d-min-height); --r-gap: var(--r-d-gap); --r-max-width: var(--r-d-max-width); padding: var(--r-padding, 0); min-height: var(--r-min-height, auto); gap: var(--r-gap, normal); }
+@media (max-width: 767px) { .responsive-frame { --r-padding: var(--r-m-padding, var(--r-d-padding)); --r-min-height: var(--r-m-min-height, var(--r-d-min-height)); --r-gap: var(--r-m-gap, var(--r-d-gap)); --r-max-width: var(--r-m-max-width, var(--r-d-max-width)); } }
+@media (min-width: 768px) and (max-width: 1199px) { .responsive-frame { --r-padding: var(--r-t-padding, var(--r-d-padding)); --r-min-height: var(--r-t-min-height, var(--r-d-min-height)); --r-gap: var(--r-t-gap, var(--r-d-gap)); --r-max-width: var(--r-t-max-width, var(--r-d-max-width)); } }
+@media (prefers-reduced-motion: reduce) { .responsive-frame { scroll-behavior: auto; } }

@@ -11,10 +11,12 @@ import Step2Events from "./steps/Step2Events";
 import Step3Gallery from "./steps/Step3Gallery";
 import Step4Extras from "./steps/Step4Extras";
 import Step5Review from "./steps/Step5Review";
+import DynamicHtmlFormWizard from "./DynamicHtmlFormWizard";
 
 import PhoneMockup from "@/components/ui/PhoneMockup";
 import TemplateEngine from "@/components/template/TemplateEngine";
 import { TemplateConfig } from "@/lib/validations/template-config";
+import { mapClientDataToWeddingData } from "@/lib/data-mapper";
 
 interface ClientFormWizardProps {
   clientToken: string;
@@ -29,6 +31,19 @@ export default function ClientFormWizard({
   templateName = "minimalist-1", 
   templateConfig 
 }: ClientFormWizardProps) {
+  const isCustomHtmlTheme = templateConfig?.blocks?.some((b: any) => b.type === "raw-html");
+
+  if (isCustomHtmlTheme) {
+    return (
+      <DynamicHtmlFormWizard
+        clientToken={clientToken}
+        initialData={initialData}
+        templateName={templateName}
+        templateConfig={templateConfig}
+      />
+    );
+  }
+
   const [activeStep, setActiveStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -187,7 +202,7 @@ export default function ClientFormWizard({
             <TemplateEngine 
               templateName={templateName}
               config={templateConfig}
-              data={watchAllFields}
+              data={mapClientDataToWeddingData(watchAllFields)}
             />
           </div>
         </div>
@@ -328,7 +343,7 @@ export default function ClientFormWizard({
             <TemplateEngine 
               templateName={templateName}
               config={templateConfig}
-              data={watchAllFields}
+              data={mapClientDataToWeddingData(watchAllFields)}
             />
           </div>
         </PhoneMockup>

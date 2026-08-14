@@ -21,6 +21,13 @@ export const templateConfigSchema = z.object({
     showLiveStream: z.boolean().default(true),
     showGift: z.boolean().default(true),
   }).default({}),
+  blocks: z.array(
+    z.object({
+      id: z.string().optional(),
+      type: z.string(),
+      props: z.record(z.any()).default({}),
+    })
+  ).optional(),
 });
 
 export type TemplateConfig = z.infer<typeof templateConfigSchema>;
