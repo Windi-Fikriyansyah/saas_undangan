@@ -75,6 +75,13 @@ const tamuItems: NavItem[] = [
   }
 ];
 
+const promoItems: NavItem[] = [
+  {
+    icon: <PlugInIcon />,
+    name: "Landing Page",
+    path: "/dashboard/landingpages",
+  }
+];
 
 const akunItems: NavItem[] = [
   {
@@ -328,6 +335,11 @@ const AppSidebar: React.FC = () => {
           <div>
             {renderGroupTitle("TAMU")}
             {renderMenuItems(tamuItems, "tamu")}
+          </div>
+
+          <div>
+            {renderGroupTitle("PROMOSI")}
+            {renderMenuItems(promoItems, "promo")}
           </div>
 
           <div>

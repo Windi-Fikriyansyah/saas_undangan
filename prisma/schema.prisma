@@ -61,6 +61,7 @@ model Vendor {
   accounts Account[]
   sessions Session[]
   payments Payment[]
+  landingPages LandingPage[]
 
   @@map("vendors")
 }
@@ -188,4 +189,21 @@ model Payment {
   
   @@index([vendorId])
   @@map("payments")
+}
+
+model LandingPage {
+  id        String   @id @default(uuid())
+  vendorId  String
+  name      String
+  slug      String   
+  content   Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  @@unique([vendorId, slug])
+  @@index([vendorId])
+  @@map("landing_pages")
 }
