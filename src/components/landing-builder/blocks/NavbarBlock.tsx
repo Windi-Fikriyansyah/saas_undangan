@@ -10,15 +10,21 @@ export const NavbarSchema = z.object({
   })),
   buttonText: z.string(),
   buttonUrl: z.string(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  buttonColor: z.string().optional(),
 });
 
 type NavbarData = z.infer<typeof NavbarSchema>;
 
 const NavbarComponent = ({ data, isPreview }: { data: NavbarData, isPreview?: boolean }) => {
   return (
-    <div className="bg-white border-b border-gray-100 py-4 px-6 md:px-12 flex justify-between items-center shadow-sm">
-      <div className="font-bold text-xl text-brand-600">{data.logoText}</div>
-      <div className="hidden md:flex gap-8 text-sm font-medium text-gray-600">
+    <div 
+      className="border-b border-gray-100 py-4 px-6 md:px-12 flex justify-between items-center shadow-sm"
+      style={{ backgroundColor: data.backgroundColor || "#ffffff", color: data.textColor || "#111827" }}
+    >
+      <div className="font-bold text-xl">{data.logoText}</div>
+      <div className="hidden md:flex gap-8 text-sm font-medium">
         {data.links.map((link, idx) => (
           <a key={idx} href={isPreview ? "#" : link.url} className="hover:text-brand-500 transition">
             {link.label}
@@ -28,7 +34,8 @@ const NavbarComponent = ({ data, isPreview }: { data: NavbarData, isPreview?: bo
       {data.buttonText && (
         <a 
           href={isPreview ? "#" : data.buttonUrl}
-          className="bg-brand-500 text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-brand-600 transition"
+          className="px-5 py-2 rounded-md text-sm font-medium transition hover:opacity-90"
+          style={{ backgroundColor: data.buttonColor || "#3b82f6", color: "#ffffff" }}
         >
           {data.buttonText}
         </a>
@@ -116,6 +123,28 @@ const NavbarEditor = ({ data, onChange }: { data: NavbarData; onChange: (data: N
           onChange={(e) => onChange({ ...data, buttonUrl: e.target.value })}
           className="w-full border rounded px-3 py-2"
         />
+      </div>
+
+      <div className="pt-4 border-t border-gray-200">
+        <label className="block text-sm font-medium mb-1">Warna Background (Hex)</label>
+        <div className="flex gap-2">
+          <input type="color" value={data.backgroundColor || "#ffffff"} onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border p-1" />
+          <input type="text" value={data.backgroundColor || ""} onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })} className="flex-1 border rounded px-3 py-2" placeholder="#ffffff" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Warna Teks (Hex)</label>
+        <div className="flex gap-2">
+          <input type="color" value={data.textColor || "#111827"} onChange={(e) => onChange({ ...data, textColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border p-1" />
+          <input type="text" value={data.textColor || ""} onChange={(e) => onChange({ ...data, textColor: e.target.value })} className="flex-1 border rounded px-3 py-2" placeholder="#111827" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Warna Tombol (Hex)</label>
+        <div className="flex gap-2">
+          <input type="color" value={data.buttonColor || "#3b82f6"} onChange={(e) => onChange({ ...data, buttonColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border p-1" />
+          <input type="text" value={data.buttonColor || ""} onChange={(e) => onChange({ ...data, buttonColor: e.target.value })} className="flex-1 border rounded px-3 py-2" placeholder="#3b82f6" />
+        </div>
       </div>
     </div>
   );

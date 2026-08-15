@@ -43,16 +43,27 @@ export default function LandingPageTableClient({ landingPages }: LandingPageTabl
     {
       id: "actions",
       header: "Aksi",
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          <Link href={`/dashboard/landingpages/${row.original.id}/edit`}>
-            <Button size="sm" variant="outline">Edit</Button>
-          </Link>
-          <a href={`/${row.original.slug}`} target="_blank" rel="noreferrer">
-            <Button size="sm" variant="outline">Lihat</Button>
-          </a>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const subdomain = row.original.vendor?.subdomain || "demo";
+        const domain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "saas-undangan.com";
+        const isLocalhost = domain.includes("localhost");
+        const protocol = isLocalhost ? "http://" : "https://";
+        
+        // If testing on localhost, you might want it to route to localhost or the actual domain.
+        // For production behavior:
+        const url = `${protocol}${subdomain}.${domain}/${row.original.slug}`;
+
+        return (
+          <div className="flex gap-2">
+            <Link href={`/dashboard/landingpages/${row.original.id}/edit`}>
+              <Button size="sm" variant="outline">Edit</Button>
+            </Link>
+            <a href={url} target="_blank" rel="noreferrer">
+              <Button size="sm" variant="outline">Lihat</Button>
+            </a>
+          </div>
+        );
+      },
     },
   ], []);
 

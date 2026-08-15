@@ -7,20 +7,33 @@ export const CallToActionSchema = z.object({
   subtitle: z.string(),
   buttonText: z.string(),
   buttonUrl: z.string(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  buttonColor: z.string().optional(),
 });
 
 type CallToActionData = z.infer<typeof CallToActionSchema>;
 
 const CallToActionComponent = ({ data, isPreview }: { data: CallToActionData, isPreview?: boolean }) => {
   return (
-    <div className="py-20 px-4 bg-gray-900 text-center text-white">
+    <div 
+      className="py-20 px-4 text-center"
+      style={{
+        backgroundColor: data.backgroundColor || "#111827", // gray-900
+        color: data.textColor || "#ffffff",
+      }}
+    >
       <div className="max-w-3xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold mb-4">{data.title}</h2>
-        <p className="text-lg text-gray-300 mb-8">{data.subtitle}</p>
+        <p className="text-lg mb-8 opacity-80">{data.subtitle}</p>
         {data.buttonText && (
           <a 
             href={isPreview ? "#" : data.buttonUrl} 
-            className="inline-block bg-brand-500 text-white font-semibold px-8 py-3 rounded-full hover:bg-brand-600 transition shadow-lg shadow-brand-500/30"
+            className="inline-block font-semibold px-8 py-3 rounded-full transition shadow-lg"
+            style={{
+              backgroundColor: data.buttonColor || "#3b82f6", // brand-500
+              color: "#ffffff"
+            }}
           >
             {data.buttonText}
           </a>
@@ -69,6 +82,28 @@ const CallToActionEditor = ({ data, onChange }: { data: CallToActionData; onChan
           className="w-full border rounded px-3 py-2"
           placeholder="https://wa.me/..."
         />
+      </div>
+
+      <div className="pt-4 border-t border-gray-200">
+        <label className="block text-sm font-medium mb-1">Warna Background (Hex)</label>
+        <div className="flex gap-2">
+          <input type="color" value={data.backgroundColor || "#111827"} onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border p-1" />
+          <input type="text" value={data.backgroundColor || ""} onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })} className="flex-1 border rounded px-3 py-2" placeholder="#111827" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Warna Teks (Hex)</label>
+        <div className="flex gap-2">
+          <input type="color" value={data.textColor || "#ffffff"} onChange={(e) => onChange({ ...data, textColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border p-1" />
+          <input type="text" value={data.textColor || ""} onChange={(e) => onChange({ ...data, textColor: e.target.value })} className="flex-1 border rounded px-3 py-2" placeholder="#ffffff" />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">Warna Tombol (Hex)</label>
+        <div className="flex gap-2">
+          <input type="color" value={data.buttonColor || "#3b82f6"} onChange={(e) => onChange({ ...data, buttonColor: e.target.value })} className="w-10 h-10 rounded cursor-pointer border p-1" />
+          <input type="text" value={data.buttonColor || ""} onChange={(e) => onChange({ ...data, buttonColor: e.target.value })} className="flex-1 border rounded px-3 py-2" placeholder="#3b82f6" />
+        </div>
       </div>
     </div>
   );

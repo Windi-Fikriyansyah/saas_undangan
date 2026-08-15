@@ -17,7 +17,8 @@ export default async function LandingPagesPage() {
 
   const landingPages = await prisma.landingPage.findMany({
     where: { vendorId },
-    orderBy: { createdAt: "desc" }
+    orderBy: { createdAt: "desc" },
+    include: { vendor: { select: { subdomain: true } } }
   });
 
   return (

@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Only initialize if we have the variables, otherwise it might throw in build time
@@ -48,7 +48,29 @@ export async function generatePresignedUrl(
  * Returns the public URL of the uploaded file
  */
 export function getPublicUrl(fileName: string): string {
-  // If R2_PUBLIC_URL is not set, it cannot be accessed publicly unless bucket allows it
-  // In production, you'd map this to a custom domain
-  return `${R2_PUBLIC_URL}/${fileName}`;
+  // Use our local proxy to fetch image securely from R2
+  return `/api/image?key=${encodeURIComponent(fileName)}`;
 }
+
+/**
+ * Deletes an object from R2
+ */
+export async function deleteObject(fileName: string): Promise<boolean> {
+  if (!r2) {
+    throw new Error("Cloudflare R2 is not configured");
+  }
+
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: fileName,
+    });
+    
+    await r2.send(command);
+    return true;
+  } catch (error) {
+    console.error("Error deleting object from R2:", error);
+    return false;
+  }
+}
+

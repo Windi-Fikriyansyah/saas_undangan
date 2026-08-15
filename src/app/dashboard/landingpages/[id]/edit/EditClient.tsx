@@ -7,17 +7,27 @@ import { saveLandingPage } from "@/app/actions/landingpage";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Button from "@/components/ui/button/Button";
-import Link from "next/link";
 
-export default function CreateLandingPage() {
+interface EditLandingPageClientProps {
+  landingPage: {
+    id: string;
+    name: string;
+    slug: string;
+    content: any;
+    isActive: boolean;
+  };
+}
+
+export default function EditLandingPageClient({ landingPage }: EditLandingPageClientProps) {
   const { blocks, pageMeta, setInitialState } = useBuilderStore();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Reset store on mount
-    setInitialState([], { name: "", slug: "" });
-  }, [setInitialState]);
+    // Load store on mount
+    const initialBlocks = Array.isArray(landingPage.content) ? landingPage.content : [];
+    setInitialState(initialBlocks, { name: landingPage.name, slug: landingPage.slug });
+  }, [setInitialState, landingPage]);
 
   // Handle browser refresh or closing tab
   useEffect(() => {
@@ -34,11 +44,7 @@ export default function CreateLandingPage() {
   }, [blocks, isSaving]);
 
   const handleBack = () => {
-    if (blocks.length > 0) {
-      if (confirm("Anda memiliki perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan?")) {
-        router.push("/dashboard/landingpages");
-      }
-    } else {
+    if (confirm("Anda memiliki perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan?")) {
       router.push("/dashboard/landingpages");
     }
   };
@@ -57,12 +63,13 @@ export default function CreateLandingPage() {
     setIsSaving(true);
     try {
       await saveLandingPage({
+        id: landingPage.id,
         name: pageMeta.name,
         slug: pageMeta.slug,
         blocks: blocks,
         isActive: isPublished,
       });
-      toast.success(isPublished ? "Landing page berhasil dipublish!" : "Landing page disimpan sebagai draft!");
+      toast.success(isPublished ? "Landing page berhasil diperbarui!" : "Landing page disimpan sebagai draft!");
       router.push("/dashboard/landingpages");
     } catch (err: any) {
       toast.error(err.message || "Gagal menyimpan landing page");
@@ -84,7 +91,7 @@ export default function CreateLandingPage() {
           </button>
           <div className="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
           <h2 className="text-lg font-semibold text-black dark:text-white">
-            Builder Promosi Halaman
+            Edit Promosi Halaman
           </h2>
         </div>
         

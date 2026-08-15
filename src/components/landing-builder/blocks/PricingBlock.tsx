@@ -12,47 +12,50 @@ export const PricingSchema = z.object({
     isHighlighted: z.boolean(),
     buttonText: z.string(),
     buttonUrl: z.string(),
-  }))
+  })),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  highlightColor: z.string().optional(),
 });
 
 type PricingData = z.infer<typeof PricingSchema>;
 
 const PricingComponent = ({ data, isPreview }: { data: PricingData, isPreview?: boolean }) => {
+  const bgColor = data.backgroundColor || "#ffffff";
+  const textColor = data.textColor || "#111827";
+  const highlightColor = data.highlightColor || "#3b82f6"; // brand-500
+
   return (
-    <div className="py-20 px-4 bg-white" id="pricing">
+    <div className="py-20 px-4" id="pricing" style={{ backgroundColor: bgColor, color: textColor }}>
       <div className="text-center mb-16">
         <h2 className="text-3xl font-bold mb-3">{data.title}</h2>
-        <p className="text-gray-500 max-w-2xl mx-auto">{data.subtitle}</p>
+        <p className="max-w-2xl mx-auto opacity-80">{data.subtitle}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto">
         {data.packages.map((pkg, idx) => (
           <div 
             key={idx} 
-            className={`w-full md:w-80 p-8 rounded-2xl flex flex-col ${
-              pkg.isHighlighted 
-                ? "bg-brand-500 text-white shadow-xl shadow-brand-500/20 transform md:-translate-y-4" 
-                : "bg-gray-50 border border-gray-100 text-gray-900"
+            className={`w-full md:w-80 p-8 rounded-2xl flex flex-col transition-all ${
+              pkg.isHighlighted ? "shadow-xl transform md:-translate-y-4" : "border border-gray-100/10 shadow-sm"
             }`}
+            style={pkg.isHighlighted ? { backgroundColor: highlightColor, color: "#ffffff" } : { backgroundColor: "rgba(0,0,0,0.02)" }}
           >
-            <h3 className={`text-xl font-semibold mb-2 ${pkg.isHighlighted ? "text-white" : "text-gray-900"}`}>{pkg.name}</h3>
+            <h3 className="text-xl font-semibold mb-2">{pkg.name}</h3>
             <div className="mb-6">
               <span className="text-3xl font-bold">{pkg.price}</span>
             </div>
             <ul className="space-y-4 mb-8 flex-1">
               {pkg.features.map((feature, i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={pkg.isHighlighted ? "text-brand-200" : "text-brand-500"}><polyline points="20 6 9 17 4 12"/></svg>
-                  <span className={pkg.isHighlighted ? "text-white/90" : "text-gray-600"}>{feature}</span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: pkg.isHighlighted ? "#ffffff" : highlightColor }}><polyline points="20 6 9 17 4 12"/></svg>
+                  <span className={pkg.isHighlighted ? "opacity-90" : "opacity-80"}>{feature}</span>
                 </li>
               ))}
             </ul>
             <a 
               href={isPreview ? "#" : pkg.buttonUrl} 
-              className={`text-center py-3 rounded-lg font-semibold transition ${
-                pkg.isHighlighted 
-                  ? "bg-white text-brand-500 hover:bg-gray-100" 
-                  : "bg-brand-500 text-white hover:bg-brand-600"
-              }`}
+              className="text-center py-3 rounded-lg font-semibold transition hover:opacity-90"
+              style={pkg.isHighlighted ? { backgroundColor: "#ffffff", color: highlightColor } : { backgroundColor: highlightColor, color: "#ffffff" }}
             >
               {pkg.buttonText}
             </a>
@@ -62,6 +65,7 @@ const PricingComponent = ({ data, isPreview }: { data: PricingData, isPreview?: 
     </div>
   );
 };
+
 
 const PricingEditor = ({ data, onChange }: { data: PricingData; onChange: (data: PricingData) => void }) => {
   return (
@@ -184,6 +188,31 @@ const PricingEditor = ({ data, onChange }: { data: PricingData; onChange: (data:
         >
           + Tambah Paket
         </button>
+      </div>
+
+      {/* Colors */}
+      <div className="pt-4 border-t border-gray-200 grid gap-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">Background (Hex)</label>
+          <div className="flex gap-2">
+            <input type="color" value={data.backgroundColor || "#ffffff"} onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border p-0.5" />
+            <input type="text" value={data.backgroundColor || ""} onChange={(e) => onChange({ ...data, backgroundColor: e.target.value })} className="flex-1 border rounded px-3 py-1 text-sm" placeholder="#ffffff" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Teks Utama (Hex)</label>
+          <div className="flex gap-2">
+            <input type="color" value={data.textColor || "#111827"} onChange={(e) => onChange({ ...data, textColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border p-0.5" />
+            <input type="text" value={data.textColor || ""} onChange={(e) => onChange({ ...data, textColor: e.target.value })} className="flex-1 border rounded px-3 py-1 text-sm" placeholder="#111827" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Warna Highlight (Hex)</label>
+          <div className="flex gap-2">
+            <input type="color" value={data.highlightColor || "#3b82f6"} onChange={(e) => onChange({ ...data, highlightColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border p-0.5" />
+            <input type="text" value={data.highlightColor || ""} onChange={(e) => onChange({ ...data, highlightColor: e.target.value })} className="flex-1 border rounded px-3 py-1 text-sm" placeholder="#3b82f6" />
+          </div>
+        </div>
       </div>
     </div>
   );

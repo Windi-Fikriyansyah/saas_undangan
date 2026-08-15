@@ -9,6 +9,7 @@ import { TestimonialBlockDef } from "./blocks/TestimonialBlock";
 import { FAQBlockDef } from "./blocks/FAQBlock";
 import { CallToActionBlockDef } from "./blocks/CallToActionBlock";
 import { FooterBlockDef } from "./blocks/FooterBlock";
+import { CustomSectionBlockDef } from "./blocks/CustomSectionBlock";
 
 // Register all available blocks here
 export const BlockRegistry: Record<string, BlockDefinition<any>> = {
@@ -22,4 +23,5 @@ export const BlockRegistry: Record<string, BlockDefinition<any>> = {
   [FAQBlockDef.type]: FAQBlockDef,
   [CallToActionBlockDef.type]: CallToActionBlockDef,
   [FooterBlockDef.type]: FooterBlockDef,
+  [CustomSectionBlockDef.type]: CustomSectionBlockDef,
 };
