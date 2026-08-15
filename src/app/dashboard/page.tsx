@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function VendorDashboard() {
   const session = await getServerSession(authOptions);
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendorId = (session?.user as any).id;

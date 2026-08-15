@@ -7,7 +7,7 @@ import CreateOrderForm from "./CreateOrderForm";
 export default async function NewOrderPage() {
   const session = await getServerSession(authOptions);
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   // Fetch templates for the user to choose from

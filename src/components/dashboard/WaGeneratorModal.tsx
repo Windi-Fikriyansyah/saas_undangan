@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { generateWaLink } from "@/app/actions/guest";
+import { toast } from "sonner";
 
 interface WaGeneratorModalProps {
   orders: { id: string; clientName: string; slug: string }[];
@@ -28,25 +29,24 @@ export default function WaGeneratorModal({ orders, isOpen, onClose }: WaGenerato
   
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{ waUrl: string; parsedMessage: string; inviteLink: string } | null>(null);
-  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrderId || !guestName) {
-      setError("Silakan lengkapi pesanan dan nama tamu.");
+      toast.error("Silakan lengkapi pesanan dan nama tamu.");
       return;
     }
     
     setIsLoading(true);
-    setError("");
     
     try {
       const res = await generateWaLink(selectedOrderId, guestName, waNumber, messageTemplate);
       setResult(res);
+      toast.success("Berhasil membuat link WhatsApp");
     } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan");
+      toast.error(err.message || "Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +55,7 @@ export default function WaGeneratorModal({ orders, isOpen, onClose }: WaGenerato
   const handleCopy = () => {
     if (result) {
       navigator.clipboard.writeText(result.parsedMessage);
-      alert("Pesan berhasil disalin!");
+      toast.success("Pesan berhasil disalin!");
     }
   };
 
@@ -72,12 +72,6 @@ export default function WaGeneratorModal({ orders, isOpen, onClose }: WaGenerato
         </div>
 
         <div className="p-6">
-          {error && (
-            <div className="mb-4 rounded bg-danger/10 px-4 py-3 text-sm text-danger">
-              {error}
-            </div>
-          )}
-
           {!result ? (
             <form onSubmit={handleGenerate} className="flex flex-col gap-5">
               <div>

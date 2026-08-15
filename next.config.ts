@@ -11,6 +11,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'pub-6c3fdbd0fbef4104aa0c0f445c800ce9.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
       }
     ]
   },

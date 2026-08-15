@@ -6,9 +6,10 @@ import Button from "../ui/button/Button";
 import Input from "../form/input/InputField";
 import Label from "../form/Label";
 import Image from "next/image";
-
+import { useSession } from "next-auth/react";
 
 export default function UserMetaCard() {
+  const { data: session } = useSession();
   const { isOpen, openModal, closeModal } = useModal();
   const handleSave = () => {
     // Handle save logic here
@@ -20,12 +21,13 @@ export default function UserMetaCard() {
       <div className="p-5 border border-gray-200 rounded-2xl dark:border-gray-800 lg:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-col items-center w-full gap-6 xl:flex-row">
-            <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800">
+            <div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full dark:border-gray-800 relative">
               <Image
-                width={80}
-                height={80}
-                src="/images/user/owner.jpg"
+                fill
+                className="object-cover"
+                src={(session?.user as any)?.logoUrl || (session?.user as any)?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session?.user?.name || "Vendor")}&background=F4F7FE&color=465FFF`}
                 alt="user"
+                unoptimized
               />
             </div>
             <div className="order-3 xl:order-2">

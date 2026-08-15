@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Code, X, RefreshCw, Sparkles } from 'lucide-react';
 import { TemplateConfig } from "@/lib/validations/template-config";
 import WeddingRenderer from "@/components/wedding/WeddingRenderer";
+import { toast } from "sonner";
 
 interface TemplateProps {
   templateName: string;
@@ -56,7 +57,7 @@ export default function TemplateEngine({ templateName, data, config: dbConfig, o
       setConfig(parsed);
       setIsConfigDrawerOpen(false);
     } catch (err) {
-      alert("Invalid JSON structure format!");
+      toast.error("Invalid JSON structure format!");
     }
   };
 

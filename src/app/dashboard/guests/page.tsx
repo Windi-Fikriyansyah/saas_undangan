@@ -5,12 +5,13 @@ import { redirect } from "next/navigation";
 import { RsvpStatus } from "@/generated/prisma/client";
 
 import WaGeneratorWrapper from "@/components/dashboard/WaGeneratorWrapper";
+import GuestsTableClient from "./GuestsTableClient";
 
 export default async function GuestsPage({ searchParams }: { searchParams: { orderId?: string; search?: string } }) {
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendorId = (session!.user as any).id;
@@ -89,20 +90,9 @@ export default async function GuestsPage({ searchParams }: { searchParams: { ord
         </div>
       </div>
 
-      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="px-4 py-6 md:px-6 xl:px-7.5 flex items-center justify-between">
-          <h4 className="text-xl font-semibold text-black dark:text-white">
-            Daftar Tamu
-          </h4>
-          
+      <div className="rounded-sm border border-stroke bg-white px-5 pb-5 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
+        <div className="mb-4 flex flex-col sm:flex-row items-center gap-2">
           <form method="get" className="flex flex-col sm:flex-row items-center gap-2">
-            <input
-              type="text"
-              name="search"
-              placeholder="Cari nama tamu..."
-              defaultValue={searchParams.search || ""}
-              className="rounded border border-stroke bg-transparent px-4 py-2 outline-none transition focus:border-brand-500 active:border-brand-500 dark:border-form-strokedark dark:bg-form-input"
-            />
             <select
               name="orderId"
               defaultValue={filterOrderId || ""}
@@ -119,79 +109,14 @@ export default async function GuestsPage({ searchParams }: { searchParams: { ord
               type="submit"
               className="rounded bg-brand-500 px-4 py-2 text-white transition hover:bg-brand-600"
             >
-              Tampilkan
+              Filter
             </button>
           </form>
         </div>
-
-        <div className="grid grid-cols-6 border-t border-stroke px-4 py-4.5 dark:border-strokedark sm:grid-cols-8 md:px-6 2xl:px-7.5">
-          <div className="col-span-2 flex items-center">
-            <p className="font-medium">Klien / Pesanan</p>
-          </div>
-          <div className="col-span-2 flex items-center">
-            <p className="font-medium">Nama Tamu</p>
-          </div>
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">RSVP</p>
-          </div>
-          <div className="col-span-2 flex items-center">
-            <p className="font-medium">Pesan</p>
-          </div>
-          <div className="col-span-1 flex items-center">
-            <p className="font-medium">Jml. Buka</p>
-          </div>
+        
+        <div className="max-w-full overflow-x-auto">
+          <GuestsTableClient guests={guests} />
         </div>
-
-        {guests.length === 0 ? (
-          <div className="px-4 py-8 text-center text-gray-500">
-            Belum ada data tamu.
-          </div>
-        ) : (
-          guests.map((guest, key) => (
-            <div
-              className={`grid grid-cols-6 sm:grid-cols-8 border-t border-stroke px-4 py-4.5 dark:border-strokedark md:px-6 2xl:px-7.5 ${
-                key === guests.length - 1 ? "border-b" : ""
-              }`}
-              key={guest.id}
-            >
-              <div className="col-span-2 flex items-center">
-                <p className="text-sm text-black dark:text-white">
-                  {guest.order.clientName}
-                </p>
-              </div>
-              <div className="col-span-2 flex items-center">
-                <p className="text-sm font-medium text-black dark:text-white">
-                  {guest.name}
-                </p>
-              </div>
-              <div className="col-span-1 flex items-center">
-                <p
-                  className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-xs font-medium ${
-                    guest.rsvpStatus === "HADIR"
-                      ? "bg-success text-success"
-                      : guest.rsvpStatus === "TIDAK_HADIR"
-                      ? "bg-danger text-danger"
-                      : guest.rsvpStatus === "RAGU"
-                      ? "bg-warning text-warning"
-                      : "bg-primary text-primary"
-                  }`}
-                >
-                  {guest.rsvpStatus} ({guest.rsvpCount})
-                </p>
-              </div>
-              <div className="col-span-2 flex items-center">
-                <p className="text-sm text-black dark:text-white truncate pr-4">
-                  {guest.message || "-"}
-                </p>
-              </div>
-              <div className="col-span-1 flex items-center">
-                <p className="text-sm text-black dark:text-white text-center">
-                  {guest.openCount}x
-                </p>
-              </div>
-            </div>
-          ))
-        )}
       </div>
     </div>
   );

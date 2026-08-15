@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateVendorPlan } from "@/app/actions/admin";
+import { toast } from "sonner";
 
 export default function VendorActions({ vendorId, currentPlan }: { vendorId: string, currentPlan: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,10 +14,11 @@ export default function VendorActions({ vendorId, currentPlan }: { vendorId: str
     try {
       await updateVendorPlan(vendorId, plan);
       setIsOpen(false);
+      toast.success("Berhasil update vendor");
       window.location.reload();
     } catch (error) {
       console.error(error);
-      alert("Gagal update vendor");
+      toast.error("Gagal update vendor");
     } finally {
       setIsLoading(false);
     }

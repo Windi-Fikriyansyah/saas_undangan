@@ -8,7 +8,7 @@ import ProfileForm from "./ProfileForm"; // Client Component
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendorId = (session?.user as any).id;
@@ -16,8 +16,16 @@ export default async function ProfilePage() {
     where: { id: vendorId },
   });
 
+  const totalOrders = await prisma.order.count({
+    where: { vendorId }
+  });
+
+  const liveOrders = await prisma.order.count({
+    where: { vendorId, status: "LIVE" }
+  });
+
   if (!vendor) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   return (
@@ -62,10 +70,16 @@ export default async function ProfilePage() {
                   {vendor.planExpiresAt ? vendor.planExpiresAt.toLocaleDateString("id-ID") : "Selamanya"}
                 </p>
               </div>
-              <div>
+              <div className="mb-4">
                 <span className="text-sm font-medium">Kuota Terpakai</span>
                 <p className="mt-1 text-black dark:text-white">
-                  {vendor.quotaUsed} undangan
+                  {totalOrders} undangan (Total)
+                </p>
+              </div>
+              <div>
+                <span className="text-sm font-medium">Undangan Aktif (Live)</span>
+                <p className="mt-1 font-semibold text-brand-500">
+                  {liveOrders} undangan
                 </p>
               </div>
             </div>

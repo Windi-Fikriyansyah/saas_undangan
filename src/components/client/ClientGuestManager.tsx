@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { getGuestsByClient, createGuestByClient, updateGuestByClient, deleteGuestByClient, bulkCreateGuestsByClient } from "@/app/actions/client-guest";
 import * as XLSX from "xlsx";
 import ShareLinksModal from "./ShareLinksModal";
+import { DataTable } from "@/components/ui/data-table";
+import { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 
 interface Guest {
   id: string;
@@ -48,7 +51,6 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
     seatCount: 1,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchGuests = useCallback(async () => {
     setIsLoading(true);
@@ -68,7 +70,6 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
 
   const handleOpenModal = (mode: "create" | "edit", guest?: Guest) => {
     setModalMode(mode);
-    setError(null);
     if (mode === "edit" && guest) {
       setSelectedGuest(guest);
       setFormData({
@@ -91,12 +92,11 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name) {
-      setError("Nama tamu harus diisi.");
+      toast.error("Nama tamu harus diisi.");
       return;
     }
 
     setIsSubmitting(true);
-    setError(null);
     try {
       if (modalMode === "create") {
         await createGuestByClient(clientToken, formData);
@@ -105,8 +105,9 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
       }
       handleCloseModal();
       fetchGuests();
+      toast.success(modalMode === "create" ? "Tamu berhasil ditambahkan." : "Tamu berhasil diperbarui.");
     } catch (err: any) {
-      setError(err.message || "Gagal menyimpan tamu.");
+      toast.error(err.message || "Gagal menyimpan tamu.");
     } finally {
       setIsSubmitting(false);
     }
@@ -117,9 +118,10 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
     
     try {
       await deleteGuestByClient(clientToken, guestId);
+      toast.success(`Tamu "${name}" berhasil dihapus.`);
       fetchGuests();
     } catch (err: any) {
-      alert(err.message || "Gagal menghapus tamu.");
+      toast.error(err.message || "Gagal menghapus tamu.");
     }
   };
 
@@ -155,16 +157,16 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
         })).filter(g => g.name);
 
         if (formattedGuests.length === 0) {
-          alert("Tidak ada data valid yang ditemukan dalam file. Pastikan kolom 'Nama Tamu' terisi.");
+          toast.error("Tidak ada data valid yang ditemukan dalam file. Pastikan kolom 'Nama Tamu' terisi.");
           return;
         }
 
         const result = await bulkCreateGuestsByClient(clientToken, formattedGuests);
-        alert(result.message);
+        toast.success(result.message);
         fetchGuests();
       } catch (err: any) {
         console.error(err);
-        alert("Gagal membaca file Excel atau memproses data.");
+        toast.error("Gagal membaca file Excel atau memproses data.");
       } finally {
         setIsLoading(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -174,6 +176,105 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
   };
 
   const domain = typeof window !== "undefined" ? window.location.origin : "";
+
+  const columns = React.useMemo<ColumnDef<Guest>[]>(
+    () => [
+      {
+        accessorKey: "name",
+        header: "Nama Tamu & Kategori",
+        cell: ({ row }) => {
+          const guest = row.original;
+          return (
+            <div>
+              <div className="font-medium text-gray-900 dark:text-white">{guest.name}</div>
+              {guest.category && <div className="text-xs text-gray-500 mt-1">{guest.category}</div>}
+            </div>
+          )
+        }
+      },
+      {
+        accessorKey: "waNumber",
+        header: "Kontak",
+        cell: ({ row }) => <div className="text-gray-900 dark:text-gray-300">{row.original.waNumber || '-'}</div>
+      },
+      {
+        accessorKey: "rsvpStatus",
+        header: "Status RSVP",
+        cell: ({ row }) => {
+          const guest = row.original;
+          let badgeColor = "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+          let rsvpText = "Pending";
+          if (guest.rsvpStatus === "HADIR") {
+            badgeColor = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+            rsvpText = "Hadir";
+          } else if (guest.rsvpStatus === "TIDAK_HADIR") {
+            badgeColor = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+            rsvpText = "Tidak Hadir";
+          } else if (guest.rsvpStatus === "RAGU") {
+            badgeColor = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+            rsvpText = "Ragu-ragu";
+          }
+
+          return (
+            <div>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}`}>
+                {rsvpText}
+              </span>
+              {guest.rsvpStatus === "HADIR" && <span className="ml-2 text-xs text-gray-500">({guest.rsvpCount} pax)</span>}
+            </div>
+          )
+        }
+      },
+      {
+        accessorKey: "openCount",
+        header: "Dilihat",
+        cell: ({ row }) => <div className="text-gray-500 dark:text-gray-400">{row.original.openCount}x</div>
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Aksi</div>,
+        cell: ({ row }) => {
+          const guest = row.original;
+          return (
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  const inviteLink = `${domain}/${orderSlug}?to=${guest.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+                  navigator.clipboard.writeText(inviteLink);
+                  toast.success("Link undangan disalin!");
+                }}
+                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                title="Salin Link"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleOpenModal("edit", guest)}
+                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
+                title="Edit"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleDelete(guest.id, guest.name)}
+                className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                title="Hapus"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          )
+        }
+      }
+    ],
+    [domain, orderSlug, handleOpenModal, handleDelete]
+  )
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
@@ -260,88 +361,7 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700">
         <div className="overflow-x-auto">
-          <table className="w-full whitespace-nowrap text-left text-sm">
-            <thead className="bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Nama Tamu</th>
-                <th className="px-6 py-4 font-semibold">No. WhatsApp</th>
-                <th className="px-6 py-4 font-semibold">Kategori</th>
-                <th className="px-6 py-4 font-semibold">RSVP</th>
-                <th className="px-6 py-4 font-semibold">Buka</th>
-                <th className="px-6 py-4 font-semibold text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Memuat data...</td>
-                </tr>
-              ) : guests.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">Tidak ada tamu ditemukan.</td>
-                </tr>
-              ) : (
-                guests.map((guest) => {
-                  let badgeColor = "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
-                  if (guest.rsvpStatus === "HADIR") badgeColor = "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-                  else if (guest.rsvpStatus === "TIDAK_HADIR") badgeColor = "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
-                  else if (guest.rsvpStatus === "RAGU") badgeColor = "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
-
-                  return (
-                    <tr key={guest.id} className="hover:bg-gray-50 dark:hover:bg-gray-750">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-white">{guest.name}</div>
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{guest.waNumber || "-"}</td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{guest.category || "-"}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeColor}`}>
-                          {guest.rsvpStatus}
-                        </span>
-                        {guest.rsvpStatus === "HADIR" && <span className="ml-2 text-xs text-gray-500">({guest.rsvpCount} pax)</span>}
-                      </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400">{guest.openCount}x</td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              const inviteLink = `${domain}/${orderSlug}?to=${guest.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-                              navigator.clipboard.writeText(inviteLink);
-                              alert("Link undangan disalin!");
-                            }}
-                            className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                            title="Salin Link"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleOpenModal("edit", guest)}
-                            className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-                            title="Edit"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(guest.id, guest.name)}
-                            className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-                            title="Hapus"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+          <DataTable columns={columns} data={guests} />
         </div>
       </div>
 
@@ -352,12 +372,6 @@ export default function ClientGuestManager({ clientToken, clientName, orderSlug 
             <h3 className="mb-5 text-xl font-bold text-gray-900 dark:text-white">
               {modalMode === "create" ? "Tambah Tamu Baru" : "Edit Tamu"}
             </h3>
-
-            {error && (
-              <div className="mb-4 rounded bg-red-100 p-3 text-sm text-red-600 dark:bg-red-900/30 dark:text-red-400">
-                {error}
-              </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

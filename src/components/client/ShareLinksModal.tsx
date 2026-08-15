@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface Guest {
   id: string;
@@ -32,7 +33,7 @@ export default function ShareLinksModal({ isOpen, onClose, guests, domain, order
   const handleCopySingle = (guestName: string) => {
     const text = generateMessage(guestName);
     navigator.clipboard.writeText(text);
-    alert(`Pesan untuk ${guestName} berhasil disalin!`);
+    toast.success(`Pesan untuk ${guestName} berhasil disalin!`);
   };
 
   const handleCopyAll = () => {
@@ -42,7 +43,7 @@ export default function ShareLinksModal({ isOpen, onClose, guests, domain, order
     }).join("\n");
     
     navigator.clipboard.writeText(allLinks);
-    alert("Semua link tamu berhasil disalin!");
+    toast.success("Semua link tamu berhasil disalin!");
   };
 
   return (

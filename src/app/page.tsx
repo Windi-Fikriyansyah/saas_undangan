@@ -1,17 +1,30 @@
 import Image from "next/image";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
 export default async function Home() {
-  // --- Domain Check Logic ---
+  // --- Auth Check: Redirect logged-in users to their dashboard ---
   const headersList = await headers();
   const host = headersList.get("host") || "";
   
   const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "saas-undangan.com";
   const isLocalhost = host.includes("localhost");
   const isMainDomain = host === mainDomain || host.endsWith("." + process.env.NEXT_PUBLIC_VERCEL_URL);
-  
+
+  // Only check session redirect for main domain / localhost
+  if (isLocalhost || isMainDomain) {
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+      const isAdmin = (session.user as any).isAdmin;
+      redirect(isAdmin ? "/admin" : "/dashboard");
+    }
+  }
+
+
+  // --- Domain Check Logic (uses same variables from above) ---
   if (!isLocalhost && !isMainDomain) {
     let vendor = null;
     
@@ -69,7 +82,7 @@ export default async function Home() {
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
           <a
             className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-500 px-8 text-white transition-colors hover:bg-brand-600 md:w-auto"
-            href="/api/auth/signin"
+            href="/signin"
           >
             Mulai Sekarang
           </a>

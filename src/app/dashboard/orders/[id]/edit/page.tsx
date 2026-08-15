@@ -7,7 +7,7 @@ import VendorDataEditor from "@/components/dashboard/VendorDataEditor";
 export default async function EditOrderPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendorId = (session?.user as any).id;

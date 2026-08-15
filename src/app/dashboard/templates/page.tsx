@@ -8,7 +8,7 @@ export default async function TemplatesPage() {
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   // Fetch templates for the list

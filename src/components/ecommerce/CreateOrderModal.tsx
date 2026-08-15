@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { createOrder } from "@/app/actions/order";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function CreateOrderModal({ templates = [] }: { templates?: any[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successLink, setSuccessLink] = useState<string | null>(null);
   
   const router = useRouter();
@@ -15,7 +15,6 @@ export default function CreateOrderModal({ templates = [] }: { templates?: any[]
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     setSuccessLink(null);
 
     const formData = new FormData(e.currentTarget);
@@ -29,7 +28,7 @@ export default function CreateOrderModal({ templates = [] }: { templates?: any[]
       setSuccessLink(`${window.location.origin}/form/${order.clientToken}`);
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Gagal membuat link undangan.");
+      toast.error(err.message || "Gagal membuat link undangan.");
     } finally {
       setLoading(false);
     }
@@ -133,10 +132,6 @@ export default function CreateOrderModal({ templates = [] }: { templates?: any[]
                     Setelah masa aktif habis, link tidak bisa lagi diisi oleh klien.
                   </p>
                 </div>
-
-                {error && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                )}
 
                 <div className="flex gap-3 pt-2">
                   <button

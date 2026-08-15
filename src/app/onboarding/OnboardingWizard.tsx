@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { completeOnboarding } from "@/app/actions/vendor";
+import { useState, useEffect } from "react";
+import { completeOnboarding, checkSubdomainAvailability } from "@/app/actions/vendor";
 import { useRouter } from "next/navigation";
 
 interface OnboardingWizardProps {
@@ -24,6 +24,27 @@ export default function OnboardingWizard({ initialData }: OnboardingWizardProps)
   const [uploading, setUploading] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  
+  const [subdomainStatus, setSubdomainStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+
+  useEffect(() => {
+    if (!formData.subdomain || formData.subdomain.length < 3) {
+      setSubdomainStatus("idle");
+      return;
+    }
+    
+    const timeoutId = setTimeout(async () => {
+      setSubdomainStatus("checking");
+      try {
+        const isAvailable = await checkSubdomainAvailability(formData.subdomain);
+        setSubdomainStatus(isAvailable ? "available" : "taken");
+      } catch (err) {
+        setSubdomainStatus("idle");
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.subdomain]);
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
@@ -211,7 +232,7 @@ export default function OnboardingWizard({ initialData }: OnboardingWizardProps)
             </label>
             <div className="flex">
               <span className="inline-flex items-center rounded-l border border-r-0 border-stroke bg-gray-2 px-4 py-3 text-sm text-gray-600 dark:border-strokedark dark:bg-meta-4 dark:text-gray-300">
-                undanganku.com/
+                https://
               </span>
               <input
                 type="text"
@@ -221,11 +242,20 @@ export default function OnboardingWizard({ initialData }: OnboardingWizardProps)
                   const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
                   setFormData({ ...formData, subdomain: val });
                 }}
-                placeholder="senja-undangan"
-                className="w-full rounded-r border border-stroke bg-transparent px-4.5 py-3 text-black focus:border-brand-500 focus-visible:outline-none dark:border-strokedark dark:text-white dark:focus:border-brand-500"
+                placeholder="tes"
+                className="w-full border border-stroke bg-transparent px-4.5 py-3 text-black focus:border-brand-500 focus-visible:outline-none dark:border-strokedark dark:text-white dark:focus:border-brand-500"
               />
+              <span className="inline-flex items-center rounded-r border border-l-0 border-stroke bg-gray-2 px-4 py-3 text-sm text-gray-600 dark:border-strokedark dark:bg-meta-4 dark:text-gray-300">
+                .{process.env.NEXT_PUBLIC_MAIN_DOMAIN || "saas-undangan.com"}
+              </span>
             </div>
-            <p className="mt-1 text-xs text-gray-500">Hanya boleh huruf kecil, angka, dan tanda hubung (-). Contoh: senja-undangan</p>
+            
+            <div className="mt-2 h-5">
+              {subdomainStatus === "checking" && <p className="text-xs text-gray-500">Mengecek ketersediaan...</p>}
+              {subdomainStatus === "available" && <p className="text-xs text-success font-medium">✅ Subdomain tersedia!</p>}
+              {subdomainStatus === "taken" && <p className="text-xs text-danger font-medium">❌ Subdomain sudah digunakan, pilih yang lain.</p>}
+              {subdomainStatus === "idle" && <p className="text-xs text-gray-500">Hanya boleh huruf kecil, angka, dan tanda hubung (-). Min. 3 karakter.</p>}
+            </div>
           </div>
 
           <div className="mt-8 flex justify-between">
@@ -238,7 +268,7 @@ export default function OnboardingWizard({ initialData }: OnboardingWizardProps)
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !formData.waNumber || !formData.subdomain}
+              disabled={loading || !formData.waNumber || !formData.subdomain || subdomainStatus === "taken"}
               className="rounded bg-brand-500 px-8 py-2.5 font-medium text-white hover:bg-brand-600 disabled:opacity-50"
             >
               {loading ? "Menyimpan..." : "Selesai & Simpan"}

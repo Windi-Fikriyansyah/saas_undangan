@@ -4,10 +4,10 @@ import { useState } from "react";
 import { createOrder } from "@/app/actions/order";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { toast } from "sonner";
 
 export default function CreateOrderForm({ templates = [] }: { templates?: any[] }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [successLink, setSuccessLink] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(templates[0]?.id || "");
   
@@ -16,7 +16,6 @@ export default function CreateOrderForm({ templates = [] }: { templates?: any[] 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     setSuccessLink(null);
 
     const formData = new FormData(e.currentTarget);
@@ -25,7 +24,7 @@ export default function CreateOrderForm({ templates = [] }: { templates?: any[] 
     const expiresInDays = parseInt(formData.get("expiresInDays") as string);
 
     if (!selectedTemplateId) {
-      setError("Silakan pilih template terlebih dahulu.");
+      toast.error("Silakan pilih template terlebih dahulu.");
       setLoading(false);
       return;
     }
@@ -40,7 +39,7 @@ export default function CreateOrderForm({ templates = [] }: { templates?: any[] 
       setSuccessLink(`${window.location.origin}/form/${order.clientToken}`);
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Gagal membuat link undangan.");
+      toast.error(err.message || "Gagal membuat link undangan.");
     } finally {
       setLoading(false);
     }
@@ -85,12 +84,6 @@ export default function CreateOrderForm({ templates = [] }: { templates?: any[] 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {error && (
-        <div className="rounded bg-danger/10 px-4 py-3 text-sm text-danger">
-          {error}
-        </div>
-      )}
-
       <div>
         <h4 className="mb-4 text-lg font-medium text-black dark:text-white">1. Pilih Template</h4>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

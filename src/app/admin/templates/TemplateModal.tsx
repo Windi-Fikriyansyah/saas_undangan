@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { upsertTemplate } from "@/app/actions/admin";
 import defaultTemplate from "@/lib/default-template.json";
+import { toast } from "sonner";
 
 export default function TemplateModal({ template }: { template?: any }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,9 +45,10 @@ export default function TemplateModal({ template }: { template?: any }) {
         configJson: formData.configJson
       });
       setIsOpen(false);
+      toast.success("Tema berhasil disimpan!");
       window.location.reload();
     } catch (error: any) {
-      alert("Error: " + error.message);
+      toast.error("Error: " + error.message);
     } finally {
       setIsLoading(false);
     }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { PlanType } from "@/generated/prisma/client";
 import { PLAN_LIMITS } from "@/lib/constants/billing";
 import { createPaymentRequest } from "@/app/actions/payment";
+import SubscriptionHistoryTableClient from "./SubscriptionHistoryTableClient";
 
 const PLANS = [
   {
@@ -46,7 +47,7 @@ export default async function SubscriptionPage() {
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendorId = (session!.user as any).id;
@@ -55,7 +56,7 @@ export default async function SubscriptionPage() {
   });
 
   if (!vendor) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const orderCount = await prisma.order.count({ where: { vendorId } });
@@ -154,45 +155,7 @@ export default async function SubscriptionPage() {
             <p className="text-center text-sm text-gray-500 py-4">Belum ada riwayat pembayaran.</p>
           ) : (
             <div className="max-w-full overflow-x-auto">
-              <table className="w-full table-auto">
-                <thead>
-                  <tr className="bg-gray-2 text-left dark:bg-meta-4">
-                    <th className="px-4 py-4 font-medium text-black dark:text-white xl:pl-11">Order ID</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Tanggal</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Paket</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Total</th>
-                    <th className="px-4 py-4 font-medium text-black dark:text-white">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((payment) => (
-                    <tr key={payment.id}>
-                      <td className="border-b border-[#eee] px-4 py-5 pl-9 dark:border-strokedark xl:pl-11">
-                        <p className="text-sm font-medium text-black dark:text-white">{payment.orderId}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="text-sm text-black dark:text-white">
-                          {new Date(payment.createdAt).toLocaleDateString("id-ID", { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="text-sm text-black dark:text-white">{payment.planType}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className="text-sm text-black dark:text-white">Rp {payment.amount.toLocaleString("id-ID")}</p>
-                      </td>
-                      <td className="border-b border-[#eee] px-4 py-5 dark:border-strokedark">
-                        <p className={`inline-flex rounded-full bg-opacity-10 px-3 py-1 text-sm font-medium ${
-                          payment.status === 'SUCCESS' ? 'bg-success text-success' : 
-                          payment.status === 'PENDING' ? 'bg-warning text-warning' : 'bg-danger text-danger'
-                        }`}>
-                          {payment.status}
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <SubscriptionHistoryTableClient payments={payments} />
             </div>
           )}
         </div>

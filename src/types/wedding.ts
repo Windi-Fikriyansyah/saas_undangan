@@ -65,7 +65,7 @@ export const blockSchemas = {
 
 export const blockSchema = z.object({
   id: z.string(),
-  type: z.enum(["cover","home","couple","event","gallery","rsvp","gift","souvenir","closing"]),
+  type: z.enum(["cover","home","couple","event","gallery","rsvp","gift","souvenir","closing","raw-html"]),
   props: z.record(z.string(), z.any()),
   animation: animationSchema.optional(),
   responsive: responsiveSchema.optional(),

@@ -70,35 +70,11 @@ const orderItems: NavItem[] = [
 const tamuItems: NavItem[] = [
   {
     icon: <UserCircleIcon />,
-    name: "Manajemen Tamu",
+    name: "Tamu & RSVP",
     path: "/dashboard/guests",
-  },
-  {
-    icon: <PlugInIcon />,
-    name: "Blast WA",
-    path: "#",
-    pro: true
-  },
-  {
-    icon: <PieChartIcon />,
-    name: "Tracking RSVP",
-    path: "/dashboard/guests",
-  },
+  }
 ];
 
-
-const laporanItems: NavItem[] = [
-  {
-    icon: <PieChartIcon />,
-    name: "Analitik",
-    path: "/dashboard",
-  },
-  {
-    icon: <ListIcon />,
-    name: "Export Data",
-    path: "#",
-  },
-];
 
 const akunItems: NavItem[] = [
   {
@@ -142,6 +118,7 @@ const AppSidebar: React.FC = () => {
     type: string;
     index: number;
   } | null>(null);
+  const [counts, setCounts] = useState({ all: 0, pending: 0, live: 0 });
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>({});
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -175,6 +152,14 @@ const AppSidebar: React.FC = () => {
       }
     }
   }, [openSubmenu]);
+
+  useEffect(() => {
+    import("@/app/actions/order").then((m) => {
+      m.getSidebarOrderCounts().then((res) => {
+        if (res) setCounts(res);
+      }).catch(console.error);
+    });
+  }, []);
 
   const renderMenuItems = (navItems: NavItem[], menuType: string) => (
     <ul className="flex flex-col gap-4">
@@ -332,18 +317,17 @@ const AppSidebar: React.FC = () => {
 
           <div>
             {renderGroupTitle("ORDER & UNDANGAN")}
-            {renderMenuItems(orderItems, "order")}
+            {renderMenuItems(orderItems.map(item => {
+              if (item.name === "Semua Order") return { ...item, badge: counts.all };
+              if (item.name === "Menunggu Klien") return { ...item, badge: counts.pending };
+              if (item.name === "Undangan Live") return { ...item, badge: counts.live };
+              return item;
+            }), "order")}
           </div>
 
           <div>
             {renderGroupTitle("TAMU")}
             {renderMenuItems(tamuItems, "tamu")}
-          </div>
-
-
-          <div>
-            {renderGroupTitle("LAPORAN")}
-            {renderMenuItems(laporanItems, "laporan")}
           </div>
 
           <div>

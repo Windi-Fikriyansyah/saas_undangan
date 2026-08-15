@@ -9,7 +9,7 @@ export default async function TemplatePreviewPage({ params }: { params: Promise<
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const template = await prisma.template.findUnique({

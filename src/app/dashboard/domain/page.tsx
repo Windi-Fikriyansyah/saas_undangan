@@ -9,7 +9,7 @@ export default async function DomainPage() {
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendorId = (session!.user as any).id;
@@ -18,7 +18,7 @@ export default async function DomainPage() {
   });
 
   if (!vendor) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const isEligibleForDomain = vendor.planType === "PRO" || vendor.planType === "BUSINESS";

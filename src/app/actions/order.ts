@@ -138,3 +138,31 @@ export async function updateOrderData(orderId: string, dataJson: any) {
 
   return order;
 }
+
+export async function getSidebarOrderCounts() {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user as any)?.id) {
+    return { all: 0, pending: 0, live: 0 };
+  }
+
+  const vendorId = (session?.user as any).id;
+  const tenantPrisma = getTenantPrisma(vendorId);
+
+  const [all, pending, live] = await Promise.all([
+    tenantPrisma.order.count({ where: { vendorId } }),
+    tenantPrisma.order.count({
+      where: {
+        vendorId,
+        status: { in: ["PENDING", "FILLING"] }
+      }
+    }),
+    tenantPrisma.order.count({
+      where: {
+        vendorId,
+        status: "LIVE"
+      }
+    })
+  ]);
+
+  return { all, pending, live };
+}

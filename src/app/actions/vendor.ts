@@ -79,3 +79,20 @@ export async function completeOnboarding(data: {
     throw new Error("Gagal menyelesaikan onboarding");
   }
 }
+
+export async function checkSubdomainAvailability(subdomain: string): Promise<boolean> {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user as any)?.id) {
+    return false;
+  }
+  const vendorId = (session?.user as any).id;
+  
+  const existingSubdomain = await prisma.vendor.findFirst({
+    where: {
+      subdomain,
+      id: { not: vendorId },
+    },
+  });
+
+  return !existingSubdomain;
+}

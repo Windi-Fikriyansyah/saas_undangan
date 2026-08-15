@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { upsertTemplate, getTemplateById } from "@/app/actions/admin";
+import { toast } from "sonner";
 
 function BuilderContent() {
   const router = useRouter();
@@ -309,7 +310,7 @@ function BuilderContent() {
     runningDoc.querySelectorAll('[data-var]').forEach(el => {
       const builderId = el.getAttribute('data-builder-id');
       const varName = el.getAttribute('data-var');
-      const tplLabel = el.dataset.tplLabel;
+      const tplLabel = (el as HTMLElement).dataset.tplLabel;
       
       if (builderId && varName) {
         const targetEl = exportDoc.querySelector(`[data-builder-id="${builderId}"]`);
@@ -347,7 +348,7 @@ function BuilderContent() {
 
   const handleSaveTemplate = async () => {
     if(!meta.id || !meta.name) {
-      alert("ID dan Nama Tema wajib diisi");
+      toast.error("ID dan Nama Tema wajib diisi");
       return;
     }
     
@@ -360,7 +361,7 @@ function BuilderContent() {
     }
     
     if(!finalHtml) {
-      alert("HTML tidak boleh kosong");
+      toast.error("HTML tidak boleh kosong");
       return;
     }
     
@@ -396,9 +397,10 @@ function BuilderContent() {
         configJson: JSON.stringify(configJson)
       });
       
+      toast.success("Template berhasil disimpan!");
       router.push("/admin/templates");
     } catch (error: any) {
-      alert("Error: " + error.message);
+      toast.error("Error: " + error.message);
     } finally {
       setIsLoading(false);
     }

@@ -3,6 +3,7 @@ import { getFontVariable } from "@/lib/fonts";
 import { ClientFormData } from "@/lib/validations/client-form";
 import RsvpForm from "../RsvpForm";
 import Guestbook from "../Guestbook";
+import { toast } from "sonner";
 
 export default function EleganTemplate({ data, config, orderId, guests, guestName }: TemplateProps) {
   // Use a highly elegant serif font if available, fallback to whatever is configured
@@ -268,7 +269,7 @@ export default function EleganTemplate({ data, config, orderId, guests, guestNam
             <button 
               onClick={() => {
                 navigator.clipboard.writeText(formData.step4?.bankAccount || "1234 5678 90");
-                alert("Nomor rekening berhasil disalin!");
+                toast.success("Nomor rekening berhasil disalin!");
               }}
               className="mt-8 text-xs uppercase tracking-widest text-slate-400 hover:text-[#d4af37] transition-colors flex items-center justify-center gap-2 mx-auto"
             >

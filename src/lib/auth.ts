@@ -58,20 +58,58 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "database", // Use DB session for active tracking of vendor sessions
+    strategy: "jwt", // Use JWT so middleware can read the token at the edge
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  debug: true,
+  debug: false,
   pages: {
     signIn: '/signin',
   },
   callbacks: {
-    async session({ session, user }: any) {
-      if (session.user && user) {
-        // Inject vendor ID and role to session
-        (session.user as any).id = user.id;
-        (session.user as any).isAdmin = user.isAdmin;
+    async jwt({ token, user, trigger }: any) {
+      // On initial sign-in, user object is available from the adapter
+      if (user) {
+        token.id = user.id;
+        token.isAdmin = user.isAdmin ?? false;
+        token.isOnboarded = user.isOnboarded ?? false;
+        token.logoUrl = user.logoUrl ?? null;
+      }
+      
+      // On every token refresh, re-fetch from DB to ensure role is up-to-date
+      if (trigger === "update" || !user) {
+        try {
+          const dbUser = await prisma.vendor.findUnique({
+            where: { id: token.id as string },
+            select: { isAdmin: true, isOnboarded: true, logoUrl: true },
+          });
+          if (dbUser) {
+            token.isAdmin = dbUser.isAdmin;
+            token.isOnboarded = dbUser.isOnboarded;
+            token.logoUrl = dbUser.logoUrl;
+          }
+        } catch {
+          // If DB lookup fails, keep existing token values
+        }
+      }
+      
+      return token;
+    },
+    async session({ session, token }: any) {
+      if (session.user && token) {
+        // Inject vendor ID and role from JWT token to session
+        (session.user as any).id = token.id;
+        (session.user as any).isAdmin = token.isAdmin;
+        (session.user as any).isOnboarded = token.isOnboarded;
+        (session.user as any).logoUrl = token.logoUrl;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }: any) {
+      // If the URL is relative, prepend base URL
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      // If the URL is on the same origin, allow it
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
 }

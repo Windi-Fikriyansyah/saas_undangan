@@ -8,7 +8,7 @@ export default async function OnboardingPage() {
   const session = await getServerSession(authOptions);
   
   if (!(session?.user as any)?.id) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   const vendor = await prisma.vendor.findUnique({
@@ -16,7 +16,7 @@ export default async function OnboardingPage() {
   });
 
   if (!vendor) {
-    redirect("/api/auth/signin");
+    redirect("/signin");
   }
 
   // If already onboarded, redirect to dashboard
