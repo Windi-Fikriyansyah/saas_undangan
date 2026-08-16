@@ -6,6 +6,7 @@ import { saveClientFormStep, submitFinalClientForm } from "@/app/actions/client-
 import TabletMockup from "@/components/ui/TabletMockup";
 import TemplateEngine from "@/components/template/TemplateEngine";
 import { mapClientDataToWeddingData } from "@/lib/data-mapper";
+import ImageUploader from "@/components/ui/ImageUploader";
 
 interface DynamicHtmlFormWizardProps {
   clientToken: string;
@@ -35,7 +36,7 @@ export default function DynamicHtmlFormWizard({
     const htmlString = rawHtmlBlock?.props?.html;
     if (!htmlString) return [];
 
-    const varMap = new Map<string, string>(); // varName -> label
+    const varMap = new Map<string, { label: string, type: string }>(); // varName -> {label, type}
 
     // Extract data-var using regex
     const tagRegex = /<[^>]+data-var=["']([^"']+)["'][^>]*>/gi;
@@ -49,11 +50,15 @@ export default function DynamicHtmlFormWizard({
         continue;
       }
 
-      // Try to extract data-tpl-label or data-label
+      // Try to extract data-tpl-label
       const labelMatch = /data-tpl-label=["']([^"']+)["']/i.exec(tagStr);
       const label = labelMatch ? labelMatch[1].trim() : varName;
 
-      varMap.set(varName, label);
+      // Try to extract data-var-type
+      const typeMatch = /data-var-type=["']([^"']+)["']/i.exec(tagStr);
+      const varType = typeMatch ? typeMatch[1].trim() : "text";
+
+      varMap.set(varName, { label, type: varType });
     }
 
     // Fallback: Also support old {{varName}} formats
@@ -64,11 +69,15 @@ export default function DynamicHtmlFormWizard({
         continue;
       }
       if (!varMap.has(varName)) {
-        varMap.set(varName, varName);
+        varMap.set(varName, { label: varName, type: "text" });
       }
     }
 
-    return Array.from(varMap.entries()).map(([varName, label]) => ({ varName, label }));
+    return Array.from(varMap.entries()).map(([varName, config]) => ({ 
+      varName, 
+      label: config.label,
+      type: config.type 
+    }));
   }, [templateConfig]);
 
   const methods = useForm({
@@ -230,16 +239,49 @@ export default function DynamicHtmlFormWizard({
                   <p className="text-gray-500 text-sm">Tidak ada variabel (data-var) yang ditemukan dalam kode HTML.</p>
                 ) : (
                   variables.map((v) => (
-                    <div key={v.varName}>
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <div key={v.varName} className="mb-4">
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {v.label}
                       </label>
-                      <input
-                        type="text"
-                        {...methods.register(`customData.${v.varName}`)}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-                        placeholder={`Isi nilai untuk ${v.label}`}
-                      />
+                      
+                      {(v.type === 'image' || v.type === 'background') ? (
+                        <div className="flex items-start gap-4">
+                          {watchAllFields?.customData?.[v.varName] && (
+                            <img 
+                              src={watchAllFields.customData[v.varName]} 
+                              alt={v.label} 
+                              className="h-24 w-24 object-cover rounded-md border border-stroke dark:border-strokedark"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <ImageUploader 
+                              onUploadSuccess={(url) => {
+                                methods.setValue(`customData.${v.varName}`, url, { 
+                                  shouldValidate: true, 
+                                  shouldDirty: true, 
+                                  shouldTouch: true 
+                                });
+                              }}
+                              folder={`clients/${clientToken}/images`}
+                              maxSizeMB={5}
+                            />
+                            <p className="text-xs text-gray-500 mt-2">Format: JPG, PNG, WEBP (Max 5MB)</p>
+                          </div>
+                        </div>
+                      ) : (v.type === 'date' || v.type === 'datetime' || v.type === 'countdown') ? (
+                        <input
+                          type={v.type === 'date' ? "date" : "datetime-local"}
+                          {...methods.register(`customData.${v.varName}`)}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          {...methods.register(`customData.${v.varName}`)}
+                          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+                          placeholder={`Isi nilai untuk ${v.label}`}
+                        />
+                      )}
                     </div>
                   ))
                 )}

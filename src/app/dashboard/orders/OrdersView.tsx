@@ -31,6 +31,16 @@ export default async function OrdersView({
   const whereCondition: any = {};
   if (mappedStatusFilter === OrderStatus.PENDING) {
     whereCondition.status = { in: [OrderStatus.PENDING, OrderStatus.FILLING] };
+  } else if (mappedStatusFilter === OrderStatus.EXPIRED) {
+    whereCondition.OR = [
+      { status: OrderStatus.EXPIRED },
+      { AND: [{ expiresAt: { not: null } }, { expiresAt: { lt: new Date() } }] }
+    ];
+  } else if (mappedStatusFilter === OrderStatus.LIVE) {
+    whereCondition.AND = [
+      { status: OrderStatus.LIVE },
+      { OR: [{ expiresAt: null }, { expiresAt: { gte: new Date() } }] }
+    ];
   } else if (mappedStatusFilter) {
     whereCondition.status = mappedStatusFilter;
   }

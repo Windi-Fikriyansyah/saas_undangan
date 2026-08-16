@@ -7,7 +7,7 @@ import EditLandingPageClient from "./EditClient";
 export default async function EditLandingPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   if (!(session?.user as any)?.id) {
-    redirect("/login");
+    redirect("/signin");
   }
 
   const vendorId = (session!.user as any).id;

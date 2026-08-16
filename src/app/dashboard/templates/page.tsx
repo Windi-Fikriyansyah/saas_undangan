@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
+import VendorTemplateModal from "./VendorTemplateModal";
 
 export default async function TemplatesPage() {
   const session = await getServerSession(authOptions);
@@ -11,8 +12,15 @@ export default async function TemplatesPage() {
     redirect("/signin");
   }
 
-  // Fetch templates for the list
+  // Fetch templates for the vendor and global templates
+  const vendorId = (session?.user as any)?.id;
   const templates = await prisma.template.findMany({
+    where: {
+      OR: [
+        { vendorId: null }, // Global templates
+        { vendorId: vendorId } // Vendor's own templates
+      ]
+    },
     orderBy: { createdAt: 'desc' }
   });
 
@@ -22,6 +30,9 @@ export default async function TemplatesPage() {
         <h2 className="text-title-md2 font-semibold text-black dark:text-white">
           Menu Template
         </h2>
+        <div className="flex items-center gap-3">
+          <VendorTemplateModal />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-9">
@@ -51,6 +62,14 @@ export default async function TemplatesPage() {
                         >
                           Preview
                         </Link>
+                        {tpl.vendorId === vendorId && (
+                          <Link 
+                            href={`/dashboard/templates/dnd-builder?id=${tpl.id}`}
+                            className="text-sm text-warning hover:underline"
+                          >
+                            Visual Builder
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}

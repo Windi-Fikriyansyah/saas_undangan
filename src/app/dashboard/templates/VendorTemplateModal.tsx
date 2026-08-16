@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { upsertTemplate } from "@/app/actions/admin";
+import { upsertVendorTemplate } from "@/app/actions/template";
+import { useRouter } from "next/navigation";
 import defaultTemplate from "@/lib/default-template.json";
 import { toast } from "sonner";
 import ImageUploader from "@/components/ui/ImageUploader";
@@ -9,6 +10,7 @@ import ImageUploader from "@/components/ui/ImageUploader";
 export default function TemplateModal({ template }: { template?: any }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   
   const isCustomHtmlInit = template?.configJson?.blocks?.some((b: any) => b.type === "raw-html") || false;
   const initialHtml = isCustomHtmlInit ? (template?.configJson?.blocks?.find((b: any) => b.type === "raw-html")?.props?.html || "") : "";
@@ -32,7 +34,6 @@ export default function TemplateModal({ template }: { template?: any }) {
     }));
   };
 
-  // Delete old image from R2 when replacing or removing
   const deleteFromR2 = async (url: string) => {
     if (!url) return;
     try {
@@ -47,7 +48,6 @@ export default function TemplateModal({ template }: { template?: any }) {
   };
 
   const handleThumbnailUpload = async (newUrl: string) => {
-    // If there was an old thumbnail, delete it from R2
     if (formData.thumbnailUrl) {
       await deleteFromR2(formData.thumbnailUrl);
     }
@@ -67,7 +67,7 @@ export default function TemplateModal({ template }: { template?: any }) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await upsertTemplate({
+      await upsertVendorTemplate({
         id: formData.id,
         name: formData.name,
         category: formData.category,
@@ -76,9 +76,15 @@ export default function TemplateModal({ template }: { template?: any }) {
         thumbnailUrl: formData.thumbnailUrl,
         configJson: formData.configJson
       });
+      
+      toast.success(template ? "Tema berhasil diperbarui!" : "Tema berhasil dibuat!");
       setIsOpen(false);
-      toast.success("Tema berhasil disimpan!");
-      window.location.reload();
+      
+      if (!template) {
+        router.push(`/dashboard/templates/dnd-builder?id=${formData.id}`);
+      } else {
+        router.refresh();
+      }
     } catch (error: any) {
       toast.error("Error: " + error.message);
     } finally {

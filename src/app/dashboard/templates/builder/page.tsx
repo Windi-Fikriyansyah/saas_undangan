@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { upsertTemplate, getTemplateById } from "@/app/actions/admin";
+import { upsertVendorTemplate, getVendorTemplateById } from "@/app/actions/template";
 import { toast } from "sonner";
 import ImageUploader from "@/components/ui/ImageUploader";
 
@@ -50,7 +50,7 @@ function BuilderContent() {
 
   useEffect(() => {
     if (editId) {
-      getTemplateById(editId).then((template) => {
+      getVendorTemplateById(editId).then((template) => {
         if (template) {
           setMeta({
             id: template.id,
@@ -478,7 +478,7 @@ function BuilderContent() {
         ]
       };
 
-      await upsertTemplate({
+      await upsertVendorTemplate({
         id: meta.id,
         name: meta.name,
         category: meta.category,
@@ -489,7 +489,7 @@ function BuilderContent() {
       });
       
       toast.success("Template berhasil disimpan!");
-      router.push("/admin/templates");
+      router.push("/dashboard/templates");
     } catch (error: any) {
       toast.error("Error: " + error.message);
     } finally {

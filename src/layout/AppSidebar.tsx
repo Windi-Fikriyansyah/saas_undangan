@@ -61,6 +61,11 @@ const orderItems: NavItem[] = [
     path: "/dashboard/orders/live",
   },
   {
+    icon: <TableIcon />,
+    name: "Undangan Selesai",
+    path: "/dashboard/orders/completed",
+  },
+  {
     icon: <GridIcon />,
     name: "Templates",
     path: "/dashboard/templates",
@@ -112,6 +117,11 @@ const adminItems: NavItem[] = [
     icon: <PlugInIcon />,
     name: "Scrape Web",
     path: "/dashboard/scrape",
+  },
+  {
+    icon: <GridIcon />,
+    name: "Manajemen Tema",
+    path: "/admin/templates",
   },
 ];
 

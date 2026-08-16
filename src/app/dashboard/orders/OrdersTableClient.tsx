@@ -71,12 +71,22 @@ export default function OrdersTableClient({ orders, templates }: OrdersTableClie
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
+        let statusText = row.original.status;
         let badgeColor = "warning";
-        if (row.original.status === "LIVE") badgeColor = "success";
-        if (row.original.status === "EXPIRED") badgeColor = "error";
+        
+        // Dynamically compute EXPIRED if expiresAt is passed
+        const isExpired = row.original.status === "EXPIRED" || (row.original.expiresAt && new Date(row.original.expiresAt) < new Date());
+
+        if (isExpired) {
+          statusText = "EXPIRED";
+          badgeColor = "error";
+        } else if (statusText === "LIVE") {
+          badgeColor = "success";
+        }
+
         return (
           <Badge size="sm" color={badgeColor as any}>
-            {row.original.status}
+            {statusText}
           </Badge>
         );
       },
