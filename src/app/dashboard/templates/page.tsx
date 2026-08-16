@@ -67,7 +67,7 @@ export default async function TemplatesPage() {
                             href={`/dashboard/templates/dnd-builder?id=${tpl.id}`}
                             className="text-sm text-warning hover:underline"
                           >
-                            Visual Builder
+                            Canvas Builder
                           </Link>
                         )}
                       </div>
